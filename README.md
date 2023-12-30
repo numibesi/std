@@ -1,2 +1,2 @@
-# sem
-Student Elements
+# STD
+Study Elements
