@@ -1,0 +1,95 @@
+std.top_level:
+  title: Study Elements
+  description: Manage Study Elements
+  route_name: rep.about
+  menu_name: main
+  weight: 80
+  requirements:
+    _permission: 'access content'
+    
+std.search_option:
+  title: Search Study Elements
+  description: Search Study Elements
+  route_name: std.search
+  parent: std.top_level
+  menu_name: main
+  enabled: 1
+  weight: 1
+  requirements:
+   _permission: 'access content'
+   
+std.manage_study:
+  title: Manage Studies
+  description: Manage Studies
+  route_name: std.select_element
+  route_parameters:
+    elementtype: 'study'
+    page: '1'
+    pagesize: '10'
+  parent: std.top_level
+  menu_name: main
+  weight: 2
+  requirements:
+    _permission: 'access content'
+    _role: 'authenticated'
+
+std.manage_study_role:
+  title: Manage Study Roles
+  description: Manage Study Roles
+  route_name: std.select_element
+  route_parameters:
+    elementtype: 'studyrole'
+    page: '1'
+    pagesize: '10'
+  parent: std.top_level
+  menu_name: main
+  weight: 3
+  requirements:
+    _permission: 'access content'
+    _role: 'authenticated'
+
+std.manage_virtual_column:
+  title: Manage Virtual Columns
+  description: Manage Virtual Columns
+  route_name: std.select_element
+  route_parameters:
+    elementtype: 'virtualcolumn'
+    page: '1'
+    pagesize: '10'
+  parent: std.top_level
+  menu_name: main
+  weight: 4
+  requirements:
+    _permission: 'access content'
+    _role: 'authenticated'
+
+std.manage_study_object_collection:
+  title: Manage Study Object Collections
+  description: Manage Study Object Collections
+  route_name: std.select_element
+  route_parameters:
+    elementtype: 'studyobjectcollection'
+    page: '1'
+    pagesize: '10'
+  parent: std.top_level
+  menu_name: main
+  weight: 5
+  requirements:
+    _permission: 'access content'
+    _role: 'authenticated'
+
+std.manage_study_object:
+  title: Manage Study Objects
+  description: Manage Study Objects
+  route_name: std.select_element
+  route_parameters:
+    elementtype: 'studyobject'
+    page: '1'
+    pagesize: '10'
+  parent: std.top_level
+  menu_name: main
+  weight: 6
+  requirements:
+    _permission: 'access content'
+    _role: 'authenticated'
+

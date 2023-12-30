@@ -1,0 +1,8 @@
+services:
+  std.custom_access_check:
+    class: Drupal\std\Access\CustomAccessCheck
+    arguments: ['@current_user']
+    tags:
+      - { name: access_check, applies_to: _custom_access_check }
+  std_operations.ingest_operation:
+    class: Drupal\std\IngestOperation

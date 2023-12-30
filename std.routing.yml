@@ -1,0 +1,145 @@
+# Landing page
+
+std.search:
+  path: 'std/list/{elementtype}/{keyword}/{language}/{page}/{pagesize}'
+  defaults:
+    _form: '\Drupal\std\Form\STDListForm'
+    elementtype: 'entity'
+    keyword: '_'
+    language: '_'
+    page: '1'
+    pagesize: '12'
+  requirements:
+    _permission: 'access content'
+    _custom_access_check: 'TRUE'    
+  options:
+    no_cache: 'TRUE'
+
+# Main menu options
+
+std.list_element:
+  path: 'std/list/{elementtype}/{keyword}/{page}/{pagesize}'
+  defaults:
+    _form: '\Drupal\std\Form\STDListForm'
+  requirements:
+    _permission: 'access content'
+    _custom_access_check: 'TRUE'    
+  options:
+    no_cache: 'TRUE'
+
+std.select_element:
+  path: 'std/select/{elementtype}/{page}/{pagesize}'
+  defaults:
+    _form: '\Drupal\std\Form\STDSelectForm'
+  requirements:
+    _permission: 'access content'
+    _custom_access_check: 'TRUE'    
+  options:
+    no_cache: 'TRUE'
+
+# Study CRUD options
+
+std.add_study:
+  path: 'std/manage/addstudy'
+  defaults:
+    _form: '\Drupal\std\Form\AddStudyForm'
+    _title: 'Add Study'    
+  requirements:
+    _permission: 'access content'
+    _custom_access_check: 'TRUE'    
+  options:
+    no_cache: 'TRUE'
+
+std.edit_study:
+  path: 'std/manage/editstudy/{studyuri}'
+  defaults:
+    _form: '\Drupal\std\Form\EditStudyForm'
+    _title: 'Edit Study'    
+  requirements:
+    _permission: 'access content'  
+    _custom_access_check: 'TRUE'      
+  options:
+    no_cache: 'TRUE'
+
+# Study Object Collection CRUD options
+
+std.add_studyobjectcollection:
+  path: 'std/manage/addstudyobjectcollection'
+  defaults:
+    _form: '\Drupal\std\Form\AddStudyObjectCollectionForm'
+    _title: 'Add Study Object Collection'    
+  requirements:
+    _permission: 'access content'
+    _custom_access_check: 'TRUE'    
+  options:
+    no_cache: 'TRUE'
+
+std.edit_studyobjectcollection:
+  path: 'std/manage/editstudyobjectcooletion/{studyobjectcollectionuri}'
+  defaults:
+    _form: '\Drupal\std\Form\EditStudyObjectCollectionForm'
+    _title: 'Edit Study Object Collection'    
+  requirements:
+    _permission: 'access content'  
+    _custom_access_check: 'TRUE'      
+  options:
+    no_cache: 'TRUE'
+
+# Study Object CRUD options
+
+std.add_studyobject:
+  path: 'std/manage/addstudyobject'
+  defaults:
+    _form: '\Drupal\std\Form\AddStudyObjectForm'
+    _title: 'Add Study Object'    
+  requirements:
+    _permission: 'access content'
+    _custom_access_check: 'TRUE'    
+  options:
+    no_cache: 'TRUE'
+
+std.edit_studyobject:
+  path: 'std/manage/editstudyobject/{studyobjecturi}'
+  defaults:
+    _form: '\Drupal\std\Form\EditStudyObjectForm'
+    _title: 'Edit Study Object'    
+  requirements:
+    _permission: 'access content'  
+    _custom_access_check: 'TRUE'      
+  options:
+    no_cache: 'TRUE'
+
+# Study Object Collection options
+
+std.manage_study_object_collection:
+  path: 'std/manage/studyobjectcollection'
+  defaults:
+    _title: 'Manage Study Object Collection'    
+  requirements:
+    _permission: 'access content'
+    _custom_access_check: 'TRUE'    
+  options:
+    no_cache: 'TRUE'
+
+# Study Object options
+
+std.manage_study_object:
+  path: 'std/manage/studyobject'
+  defaults:
+    _title: 'Manage Study Object'    
+  requirements:
+    _permission: 'access content'
+    _custom_access_check: 'TRUE'    
+  options:
+    no_cache: 'TRUE'
+
+# AUTOCOMPLETE
+
+std.studyobjeccollection_study_autocomplete:
+  path: '/std/manage/studyobjectcollection/study/autocomplete'
+  defaults:
+    _controller: '\Drupal\std\Controller\JsonApiStudyController::handleAutocomplete'
+    _format: json
+  requirements:
+    _permission: 'access content'
+

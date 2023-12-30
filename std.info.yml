@@ -1,0 +1,9 @@
+name: Study Elements
+description: GUI for managing study elements like study objects (e.g., sujects) and study object collections (e.g., cohorts) stored in a HASCO API
+package: Semantic Tools
+core_version_requirement: ^8 || ^9
+type: module 
+dependencies:
+  - drupal:rep
+version: '0.6.0'
+configure: rep.admin_settings
