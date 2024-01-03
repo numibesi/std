@@ -10,6 +10,8 @@ use Drupal\file\Entity\File;
 use Drupal\rep\ListManagerEmailPage;
 use Drupal\rep\Utils;
 use Drupal\std\Entity\Study;
+use Drupal\std\Entity\StudyRole;
+use Drupal\std\Entity\VirtualColumn;
 use Drupal\std\Entity\StudyObjectCollection;
 use Drupal\std\Entity\StudyObject;
 
@@ -148,11 +150,13 @@ class STDSelectForm extends FormBase {
       '#type' => 'item',
       '#title' => $this->t('<h4>' . $this->plural_class_name . ' maintained by <font color="DarkGreen">' . $this->manager_name . ' (' . $this->manager_email . ')</font></h4>'),
     ];
-    $form['add_element'] = [
-      '#type' => 'submit',
-      '#value' => $this->t('Add New ' . $this->single_class_name),
-      '#name' => 'add_element',
-    ];
+    if ($this->element_type != "studyobjectcollection") {
+      $form['add_element'] = [
+        '#type' => 'submit',
+        '#value' => $this->t('Add New ' . $this->single_class_name),
+        '#name' => 'add_element',
+      ];
+    }
     $form['edit_selected_element'] = [
       '#type' => 'submit',
       '#value' => $this->t('Edit Selected ' . $this->single_class_name),
@@ -163,6 +167,13 @@ class STDSelectForm extends FormBase {
       '#value' => $this->t('Delete Selected ' . $this->plural_class_name),
       '#name' => 'delete_element',
     ];
+    if ($this->element_type == "study") {
+      $form['manage_soc'] = [
+        '#type' => 'submit',
+        '#value' => $this->t('Manage SOCs of Selected ' . $this->single_class_name),
+        '#name' => 'manage_soc',
+      ];
+    }
     if ($this->element_type == "sdd") {
       $form['download_sdd'] = [
         '#type' => 'submit',
@@ -240,11 +251,17 @@ class STDSelectForm extends FormBase {
       if ($this->element_type == 'study') {
         $url = Url::fromRoute('std.add_study');
       } 
+      if ($this->element_type == 'studyrole') {
+        $url = Url::fromRoute('std.add_studyrole');
+      } 
       if ($this->element_type == 'studyobjectcollection') {
-        $url = Url::fromRoute('sem.add_studyobjectcollection');
+        $url = Url::fromRoute('std.add_studyobjectcollection');
       } 
       if ($this->element_type == 'studyobject') {
-        $url = Url::fromRoute('sem.add_studyobject');
+        $url = Url::fromRoute('std.add_studyobject');
+      } 
+      if ($this->element_type == 'virtualcolumn') {
+        $url = Url::fromRoute('std.add_virtualcolumn');
       } 
       $form_state->setRedirectUrl($url);
     }  
@@ -260,11 +277,17 @@ class STDSelectForm extends FormBase {
         if ($this->element_type == 'study') {
           $url = Url::fromRoute('std.edit_study', ['studyuri' => base64_encode($first)]);
         } 
+        if ($this->element_type == 'studyrole') {
+          $url = Url::fromRoute('std.edit_studyrole', ['studyroleuri' => base64_encode($first)]);
+        } 
         if ($this->element_type == 'studyobjectcollection') {
           $url = Url::fromRoute('std.edit_studyobjectcollection', ['studyobjectcollectionuri' => base64_encode($first)]);
         } 
         if ($this->element_type == 'studyobject') {
           $url = Url::fromRoute('std.edit_studyobject', ['studyobjecturi' => base64_encode($first)]);
+        } 
+        if ($this->element_type == 'virtualcolumn') {
+          $url = Url::fromRoute('std.edit_virtualcolumn', ['virtualcolumnuri' => base64_encode($first)]);
         } 
         $form_state->setRedirectUrl($url);
       } 
@@ -280,11 +303,17 @@ class STDSelectForm extends FormBase {
           if ($this->element_type == 'study') {
             $api->studyDel($uri);
           } 
+          if ($this->element_type == 'studyrole') {
+            $api->studyRoleDel($uri);
+          } 
           if ($this->element_type == 'studyobjectcollection') {
             $api->studyObjectCollectionDel($uri);
           } 
           if ($this->element_type == 'studyobject') {
             $api->studyObjectDel($uri);
+          } 
+          if ($this->element_type == 'virtualcolumn') {
+            $api->virtualColumnDel($uri);
           } 
           if ($this->element_type == 'ssd') {
             $sdd = $api->parseObjectResponse($api->getUri($uri),'getUri');
@@ -312,6 +341,21 @@ class STDSelectForm extends FormBase {
         }
         \Drupal::messenger()->addMessage(t("Selected " . $this->plural_class_name . " has/have been deleted successfully."));      
       }
+    }  
+
+    // MANAGE SOC
+    if ($button_name === 'manage_soc') {
+      if (sizeof($rows) < 1) {
+        \Drupal::messenger()->addWarning(t("Select the exact " . $this->single_class_name . " to have its SOCs managed."));      
+      } else if ((sizeof($rows) > 1)) {
+        \Drupal::messenger()->addWarning(t("No more than one " . $this->single_class_name . " can have their SOCs managed at once."));      
+      } else if ($this->element_type == 'study') {
+        $api = \Drupal::service('rep.api_connector');
+        $first = array_shift($rows);
+        $url = Url::fromRoute('std.manage_studyobjectcollection', ['studyuri' => base64_encode($first)]);
+        $form_state->setRedirectUrl($url);
+        return;
+      } 
     }  
 
     // INGEST STD
@@ -346,7 +390,7 @@ class STDSelectForm extends FormBase {
 
     // BACK TO MAIN PAGE
     if ($button_name === 'back') {
-      $url = Url::fromRoute('sem.search');
+      $url = Url::fromRoute('std.search');
       $form_state->setRedirectUrl($url);
     }  
 

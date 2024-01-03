@@ -47,8 +47,8 @@ class EditStudyForm extends FormBase {
     $api = \Drupal::service('rep.api_connector');
     $svar = $api->parseObjectResponse($api->getUri($this->getStudyUri()),'getUri');
     if ($svar == NULL) {
-      \Drupal::messenger()->addMessage(t("Failed to retrieve Semantic Variable."));
-      $form_state->setRedirectUrl(Utils::selectBackUrl('semanticvariable'));
+      \Drupal::messenger()->addMessage(t("Failed to retrieve Study."));
+      $form_state->setRedirectUrl(Utils::selectBackUrl('study'));
     } else {
       $this->setStudy($svar);
     }

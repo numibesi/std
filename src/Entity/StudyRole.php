@@ -12,8 +12,7 @@ class StudyRole {
     return $header = [
       'element_uri' => t('URI'),
       'element_study' => t('Study'),
-      'element_soc_name' => t('SOC Name'),
-      'element_original_id' => t('Original ID'),
+      'element_name' => t('Name'),
     ];
   
   }
@@ -30,6 +29,10 @@ class StudyRole {
         $uri = $element->uri;
       }
       $uri = Utils::namespaceUri($uri);
+      $study = ' ';
+      if ($element->study != NULL && $element->study->label != NULL) {
+        $study = $element->study->label;
+      }
       $label = ' ';
       if ($element->label != NULL) {
         $label = $element->label;
@@ -38,6 +41,7 @@ class StudyRole {
       $encodedUri = rawurlencode(rawurlencode($element->uri));
       $output[$element->uri] = [
         'element_uri' => t('<a href="'.$root_url.REPGUI::DESCRIBE_PAGE.base64_encode($uri).'">'.$uri.'</a>'),     
+        'element_study' => t($study),     
         'element_name' => t($label),     
       ];
     }

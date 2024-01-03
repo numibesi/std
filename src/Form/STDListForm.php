@@ -6,8 +6,10 @@ use Drupal\Core\Form\FormBase;
 use Drupal\Core\Form\FormStateInterface;
 use Drupal\rep\ListKeywordPage;
 use Drupal\std\Entity\Study;
+use Drupal\std\Entity\StudyRole;
 use Drupal\std\Entity\StudyObjectCollection;
 use Drupal\std\Entity\StudyObject;
+use Drupal\std\Entity\VirtualColumn;
 
 class STDListForm extends FormBase {
 
@@ -87,6 +89,13 @@ class STDListForm extends FormBase {
         $output = Study::generateOutput($this->getList());    
         break;
   
+      // STUDY ROLE
+      case "studyrole":
+        $class_name = "Study Role";
+        $header = StudyRole::generateHeader();
+        $output = StudyRole::generateOutput($this->getList());    
+        break;
+
       // STUDY OBJECT COLLECTION
       case "studyobjectcollection":
         $class_name = "Study Object Collections";
@@ -99,6 +108,13 @@ class STDListForm extends FormBase {
         $class_name = "Study Object";
         $header = StudyObject::generateHeader();
         $output = StudyObject::generateOutput($this->getList());    
+        break;
+
+      // VIRTUAL COLUMN
+      case "virtualcolumn":
+        $class_name = "Virtual Column";
+        $header = VirtualColumn::generateHeader();
+        $output = VirtualColumn::generateOutput($this->getList());    
         break;
 
       default:
