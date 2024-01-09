@@ -8,6 +8,7 @@ use Drupal\Core\Form\FormStateInterface;
 use Drupal\Core\Url;
 use Drupal\rep\Utils;
 use Drupal\rep\Vocabulary\VSTOI;
+use Drupal\rep\Vocabulary\REPGUI;
 use Drupal\Component\Serialization\Json;
 use Symfony\Component\HttpFoundation\RedirectResponse;
 
@@ -58,32 +59,37 @@ class ManageStudyObjectCollectionForm extends FormBase {
     //dpm($container);
     //dpm($slotElements);
 
-    # BUILD HEADER
+    # ROOT URL
+    $root_url = \Drupal::request()->getBaseUrl();
 
+    # BUILD HEADER
     $header = [
       'soc_uri' => t('URI'),
       'soc_reference' => t('Reference'),
       'soc_label' => t('Label'),
       'soc_grounding_label' => t('Grounding Label'),
+      'soc_operations' => t('Operations'),
     ];
 
     # POPULATE DATA
-
     $output = array();
     $uriType = array();
     if ($socs != NULL) {
       foreach ($socs as $soc) {
+        $link = $root_url.REPGUI::MANAGE_STUDY_OBJECTS.base64_encode($soc->uri);
+        $button = '<a href="' . $link . '" class="btn btn-primary btn-sm" '.
+               ' role="button">Mng. Objects</a>';
         $output[$soc->uri] = [
-          'soc_uri' => $soc->uri,     
+          'soc_uri' => t('<a href="'.$root_url.REPGUI::DESCRIBE_PAGE.base64_encode($soc->uri).'">'.Utils::namespaceUri($soc->uri).'</a>'),         
           'soc_reference' => $soc->socreference,     
           'soc_label' => $soc->label,     
-          'soc_grounding_label' => $soc->groundingLabel,     
+          'soc_grounding_label' => $soc->groundingLabel,
+          'soc_operations' => t($button),     
         ];
       }
     }
 
     # PUT FORM TOGETHER
-
     $form['scope'] = [
       '#type' => 'item',
       '#title' => t('<h3>Study Object Collections (SOCs) of Study <font color="DarkGreen">' . $this->getStudy()->label . '</font></h3>'),

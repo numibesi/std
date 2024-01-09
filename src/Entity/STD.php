@@ -15,8 +15,6 @@ class STD {
       'element_name' => t('Name'),
       'element_filename' => t('FileName'),
       'element_status' => t('Status'),
-      'element_n_attributes' => t('# Attr.'),
-      'element_n_objects' => t('# Obj.'),
       'element_log' => t('Log'),
     ];
   
@@ -48,19 +46,16 @@ class STD {
       if ($element->label != NULL && $element->label != '') {
         $name = $element->label;
       }
-      $totalAttributes = -1;
-      if (isset($element->totalSTDA)) {
-        $totalAttributes = $element->totalSTDA;
-      }
-      $totalObjects = -1;
-      if (isset($element->totalSTDO)) {
-        $totalObjects = $element->totalSTDO;
-      }
       $filename = ' ';
       $filestatus = ' ';
       $log = 'N/A';
       $root_url = \Drupal::request()->getBaseUrl();
       if ($element->dataFile != NULL) {
+
+        // RETRIEVE DATAFILE BY URI
+        //$api = \Drupal::service('rep.api_connector');
+        //$dataFile = $api->parseObjectResponse($api->getUri($element->hasDataFile),'getUri');
+
         if ($element->dataFile->filename != NULL && 
             $element->dataFile->filename != '') {
           $filename = $element->dataFile->filename;
@@ -94,8 +89,6 @@ class STD {
         'element_name' => t($label),    
         'element_filename' => $filename,
         'element_status' => t($filestatus),
-        'element_n_attributes' => $totalAttributes,
-        'element_n_objects' => $totalObjects,
         'element_log' => t($log),
       ];
     }

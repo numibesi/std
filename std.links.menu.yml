@@ -18,6 +18,21 @@ std.search_option:
   requirements:
    _permission: 'access content'
    
+std.manage_std_template:
+  title: Manage STD Templates
+  description: Manage STD Templates
+  route_name: std.select_element
+  route_parameters:
+    elementtype: 'std'
+    page: '1'
+    pagesize: '10'
+  parent: std.top_level
+  menu_name: main
+  weight: 2
+  requirements:
+    _permission: 'access content'
+    _role: 'authenticated'
+
 std.manage_study:
   title: Manage Studies
   description: Manage Studies
@@ -28,7 +43,7 @@ std.manage_study:
     pagesize: '10'
   parent: std.top_level
   menu_name: main
-  weight: 2
+  weight: 3
   requirements:
     _permission: 'access content'
     _role: 'authenticated'
@@ -43,7 +58,7 @@ std.manage_study_role:
     pagesize: '10'
   parent: std.top_level
   menu_name: main
-  weight: 3
+  weight: 4
   requirements:
     _permission: 'access content'
     _role: 'authenticated'
@@ -58,7 +73,7 @@ std.manage_virtual_column:
     pagesize: '10'
   parent: std.top_level
   menu_name: main
-  weight: 4
+  weight: 5
   requirements:
     _permission: 'access content'
     _role: 'authenticated'
@@ -73,7 +88,7 @@ std.manage_study_object_collection:
     pagesize: '10'
   parent: std.top_level
   menu_name: main
-  weight: 5
+  weight: 6
   requirements:
     _permission: 'access content'
     _role: 'authenticated'
@@ -88,7 +103,7 @@ std.manage_study_object:
     pagesize: '10'
   parent: std.top_level
   menu_name: main
-  weight: 6
+  weight: 7
   requirements:
     _permission: 'access content'
     _role: 'authenticated'

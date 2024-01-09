@@ -8,82 +8,120 @@ use Drupal\Core\Url;
 use Drupal\rep\Utils;
 use Drupal\rep\Vocabulary\HASCO;
 
-class AddStudyObjectForm extends FormBase {
+class EditStudyObjectForm extends FormBase {
 
-  protected $studyObjectCollection;
+  protected $study;
 
-  public function getStudyObjectCollection() {
-    return $this->studyObjectCollection;
+  protected $studyObject;
+
+  protected $entity;
+
+  public function getStudy() {
+    return $this->study;
+  }
+  public function setStudy($study) {
+    return $this->study = $study; 
   }
 
-  public function setStudyObjectCollection($studyObjectCollection) {
-    return $this->studyObjectCollection = $studyObjectCollection; 
+  public function getStudyObject() {
+    return $this->studyObject;
+  }
+  public function setStudyObject($studyObject) {
+    return $this->studyObject = $studyObject; 
+  }
+
+  public function getEntity() {
+    return $this->entity;
+  }
+  public function setEntity($entity) {
+    return $this->entity = $entity; 
   }
 
   /**
    * {@inheritdoc}
    */
   public function getFormId() {
-    return 'add_studyobject_form';
+    return 'edit_studyobject_form';
   }
 
   /**
    * {@inheritdoc}
    */
-  public function buildForm(array $form, FormStateInterface $form_state, $studyobjectcollectionuri = NULL) {
+  public function buildForm(array $form, FormStateInterface $form_state, $studyobjecturi = NULL) {
 
     # SET CONTEXT
-    $uri=base64_decode($studyobjectcollectionuri);
+    $uri=base64_decode($studyobjecturi);
 
     $uemail = \Drupal::currentUser()->getEmail();
     $uid = \Drupal::currentUser()->id();
     $user = \Drupal\user\Entity\User::load($uid);
     $username = $user->name->value;
 
-    // RETRIEVE STUDY OBJECT COLLECTION BY URI
+    // RETRIEVE STUDY OBJECT BY URI
     $api = \Drupal::service('rep.api_connector');
-    $studyObjectCollection = $api->parseObjectResponse($api->getUri($uri),'getUri');
-    $this->setStudyObjectCollection($studyObjectCollection);
-    
-    $study = ' ';
-    if ($this->getStudyObjectCollection() != NULL &&
-        $this->getStudyObjectCollection()->study != NULL &&
-        $this->getStudyObjectCollection()->study->uri != NULL &&
-        $this->getStudyObjectCollection()->study->label != NULL) {
-      $study = Utils::fieldToAutocomplete(
-        $this->getStudyObjectCollection()->study->uri,
-        $this->getStudyObjectCollection()->study->label);
+    $studyObject = $api->parseObjectResponse($api->getUri($uri),'getUri');
+    $this->setStudyObject($studyObject);
+
+    // RETRIEVE STUDY BY URI
+    if ($studyObject != NULL &&
+        $studyObject->studyObjectCollection != NULL && 
+        $studyObject->studyObjectCollection->isMemberOf != NULL) {
+      $study = $api->parseObjectResponse($api->getUri($studyObject->studyObjectCollection->isMemberOf),'getUri');
+      $this->setStudy($study);
     }
 
-    $soc = ' ';
-    if ($this->getStudyObjectCollection() != NULL &&
-        $this->getStudyObjectCollection()->uri != NULL &&
-        $this->getStudyObjectCollection()->label != NULL) {
-      $soc = Utils::fieldToAutocomplete(
-        $this->getStudyObjectCollection()->uri,
-        $this->getStudyObjectCollection()->label);
+    // RETRIEVE ENTITY BY URI
+    $entityContent = ' '; 
+    if ($studyObject != NULL &&
+        $studyObject->typeUri != NULL) {
+          $entity = $api->parseObjectResponse($api->getUri($studyObject->typeUri),'getUri');
+          $this->setEntity($entity);
+          $entityContent = Utils::fieldToAutocomplete(
+            $this->getEntity()->uri,
+            $this->getEntity()->label);
+        }
+
+    $studyContent = ' ';
+    if ($this->getStudy() != NULL &&
+        $this->getStudy()->uri != NULL &&
+        $this->getStudy()->label != NULL) {
+      $studyContent = Utils::fieldToAutocomplete(
+        $this->getStudy()->uri,
+        $this->getStudy()->label);
+    }
+
+    $socContent = ' ';
+    if ($this->getStudyObject() != NULL &&
+        $this->getStudyObject()->studyObjectCollection != NULL &&
+        $this->getStudyObject()->studyObjectCollection->uri != NULL &&
+        $this->getStudyObject()->studyObjectCollection->label != NULL) {
+      $socContent = Utils::fieldToAutocomplete(
+        $this->getStudyObject()->studyObjectCollection->uri,
+        $this->getStudyObject()->studyObjectCollection->label);
     }
 
     $form['studyobject_study'] = [
       '#type' => 'textfield',
       '#title' => $this->t('Study'),
-      '#default_value' => $study,
+      '#default_value' => $studyContent,
       '#disabled' => TRUE,
     ];
     $form['studyobject_soc'] = [
       '#type' => 'textfield',
       '#title' => $this->t('Study Object Collection (SOC)'),
-      '#default_value' => $soc,
+      '#default_value' => $socContent,
       '#disabled' => TRUE,
     ];
     $form['studyobject_original_id'] = [
       '#type' => 'textfield',
       '#title' => $this->t('Original ID (required)'),
+      '#default_value' => $this->getStudyObject()->originalId,
     ];
     $form['studyobject_entity'] = [
       '#type' => 'textfield',
       '#title' => $this->t('Entity (required)'),
       '#autocomplete_route_name' => 'sem.semanticvariable_entity_autocomplete',
+      '#default_value' => $entityContent,
     ];
     $form['studyobject_domainscope_object'] = [
       '#type' => 'textfield',
@@ -143,7 +181,7 @@ class AddStudyObjectForm extends FormBase {
     $button_name = $triggering_element['#name'];
 
     if ($button_name === 'back') {
-      $url = Url::fromRoute('std.manage_studyobject', ['studyobjectcollectionuri' => base64_encode($this->getStudyObjectCollection()->uri)]);
+      $url = Url::fromRoute('std.manage_studyobject', ['studyobjectcollectionuri' => base64_encode($this->getStudyObject()->uri)]);
       $form_state->setRedirectUrl($url);
       return;
     } 
@@ -156,12 +194,13 @@ class AddStudyObjectForm extends FormBase {
     } 
 
     $socUri = NULL;
-    if ($this->getStudyObjectCollection() != NULL) {
-      $socUri = $this->getStudyObjectCollection()->uri; 
+    if ($this->getStudyObject() != NULL &&
+        $this->getStudyObject()->studyObjectCollection != NULL &&
+        $this->getStudyObject()->studyObjectCollection->uri != NULL) {
+        $socUri = $this->getStudyObject()->studyObjectCollection->uri; 
     } 
 
-    $newStudyObjectUri = Utils::uriGen('studyobject');
-    $studyObjectJSON = '{"uri":"'. $newStudyObjectUri .'",'.
+    $studyObjectJSON = '{"uri":"'. $this->getStudyObject()->uri .'",'.
         '"typeUri":"'.$entityUri.'",'.
         '"hascoTypeUri":"'.HASCO::STUDY_OBJECT.'",'.
         '"isMemberOf":"'.$socUri.'",'.
@@ -172,6 +211,7 @@ class AddStudyObjectForm extends FormBase {
 
     try {
       $api = \Drupal::service('rep.api_connector');
+      $api->studyObjectDel($this->getStudyObject()->uri);
       $message = $api->parseObjectResponse($api->studyObjectAdd($studyObjectJSON),'studyObjectAdd');
       if ($message != null) {
         \Drupal::messenger()->addMessage(t("Study Object has been added successfully."));

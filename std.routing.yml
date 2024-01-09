@@ -37,6 +37,30 @@ std.select_element:
   options:
     no_cache: 'TRUE'
 
+# STD CRUD options
+
+std.add_std:
+  path: 'std/manage/addstd'
+  defaults:
+    _form: '\Drupal\std\Form\AddSTDForm'
+    _title: 'Add STD Template'    
+  requirements:
+    _permission: 'access content'
+    _custom_access_check: 'TRUE'    
+  options:
+    no_cache: 'TRUE'
+
+std.edit_std:
+  path: 'std/manage/editstd/{stduri}'
+  defaults:
+    _form: '\Drupal\std\Form\EditSTDForm'
+    _title: 'Edit STD Template'    
+  requirements:
+    _permission: 'access content'  
+    _custom_access_check: 'TRUE'      
+  options:
+    no_cache: 'TRUE'
+
 # Study CRUD options
 
 std.add_study:
@@ -122,8 +146,19 @@ std.edit_studyobjectcollection:
 
 # Study Object CRUD options
 
+std.manage_studyobject:
+  path: 'std/manage/studyobjects/{studyobjectcollectionuri}'
+  defaults:
+    _form: '\Drupal\std\Form\ManageStudyObjectForm'
+    _title: 'Manage Study Objects'    
+  requirements:
+    _permission: 'access content'
+    _custom_access_check: 'TRUE'    
+  options:
+    no_cache: 'TRUE'
+
 std.add_studyobject:
-  path: 'std/manage/addstudyobject'
+  path: 'std/manage/addstudyobject/{studyobjectcollectionuri}'
   defaults:
     _form: '\Drupal\std\Form\AddStudyObjectForm'
     _title: 'Add Study Object'    

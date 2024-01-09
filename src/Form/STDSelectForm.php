@@ -9,6 +9,7 @@ use Drupal\Component\Serialization\Json;
 use Drupal\file\Entity\File;
 use Drupal\rep\ListManagerEmailPage;
 use Drupal\rep\Utils;
+use Drupal\std\Entity\STD;
 use Drupal\std\Entity\Study;
 use Drupal\std\Entity\StudyRole;
 use Drupal\std\Entity\VirtualColumn;
@@ -106,6 +107,12 @@ class STDSelectForm extends FormBase {
     switch ($this->element_type) {
 
       // ELEMENTS
+      case "std":
+        $this->single_class_name = "STD";
+        $this->plural_class_name = "STDs";
+        $header = STD::generateHeader();
+        $output = STD::generateOutput($this->getList());    
+        break;
       case "study":
         $this->single_class_name = "Study";
         $this->plural_class_name = "Studies";
@@ -174,26 +181,26 @@ class STDSelectForm extends FormBase {
         '#name' => 'manage_soc',
       ];
     }
-    if ($this->element_type == "sdd") {
-      $form['download_sdd'] = [
+    if ($this->element_type == "std") {
+      $form['download_std'] = [
         '#type' => 'submit',
         '#value' => $this->t('Download Selected ' . $this->single_class_name),
-        '#name' => 'download_sdd',
+        '#name' => 'download_std',
       ];
-      $form['ingest_sdd'] = [
+      $form['ingest_std'] = [
         '#type' => 'submit',
         '#value' => $this->t('Ingest Selected ' . $this->single_class_name),
-        '#name' => 'ingest_sdd',
+        '#name' => 'ingest_std',
         '#attributes' => [
           'class' => ['use-ajax'],
           'data-dialog-type' => 'modal',
           'data-dialog-options' => Json::encode(['width' => 700, 'height' => 400]),
         ],  
       ];
-      $form['uningest_sdd'] = [
+      $form['uningest_std'] = [
         '#type' => 'submit',
         '#value' => $this->t('Uningest Selected ' . $this->plural_class_name),
-        '#name' => 'uningest_sdd',
+        '#name' => 'uningest_std',
       ];  
     }
     $form['element_table'] = [
@@ -248,6 +255,9 @@ class STDSelectForm extends FormBase {
 
     // ADD ELEMENT
     if ($button_name === 'add_element') {
+      if ($this->element_type == 'std') {
+        $url = Url::fromRoute('std.add_std');
+      } 
       if ($this->element_type == 'study') {
         $url = Url::fromRoute('std.add_study');
       } 
@@ -274,6 +284,9 @@ class STDSelectForm extends FormBase {
         \Drupal::messenger()->addMessage(t("No more than one " . $this->single_class_name . " can be edited at once."));      
       } else {
         $first = array_shift($rows);
+        if ($this->element_type == 'std') {
+          $url = Url::fromRoute('std.edit_std', ['stduri' => base64_encode($first)]);
+        } 
         if ($this->element_type == 'study') {
           $url = Url::fromRoute('std.edit_study', ['studyuri' => base64_encode($first)]);
         } 
@@ -300,6 +313,9 @@ class STDSelectForm extends FormBase {
       } else {
         $api = \Drupal::service('rep.api_connector');
         foreach($rows as $uri) {
+          if ($this->element_type == 'std') {
+            $api->studyDel($uri);
+          } 
           if ($this->element_type == 'study') {
             $api->studyDel($uri);
           } 
@@ -315,28 +331,28 @@ class STDSelectForm extends FormBase {
           if ($this->element_type == 'virtualcolumn') {
             $api->virtualColumnDel($uri);
           } 
-          if ($this->element_type == 'ssd') {
-            $sdd = $api->parseObjectResponse($api->getUri($uri),'getUri');
-            if ($sdd != NULL && $sdd->dataFile != NULL) {
+          if ($this->element_type == 'std') {
+            $study = $api->parseObjectResponse($api->getUri($uri),'getUri');
+            if ($study != NULL && $study->dataFile != NULL) {
 
               // DELETE FILE
-              if (isset($sdd->dataFile->id)) {
-                $file = File::load($sdd->dataFile->id);
+              if (isset($study->dataFile->id)) {
+                $file = File::load($study->dataFile->id);
                 if ($file) {
                   $file->delete();
-                  \Drupal::messenger()->addMessage(t("Deleted file with following ID: ".$sdd->dataFile->id));      
+                  \Drupal::messenger()->addMessage(t("Deleted file with following ID: ".$study->dataFile->id));      
                 }  
               }
 
               // DELETE DATAFILE
-              if (isset($sdd->dataFile->uri)) {
-                $api->dataFileDel($sdd->dataFile->uri);
-                \Drupal::messenger()->addMessage(t("Deleted DataFile with following URI: ".$sdd->dataFile->uri));      
+              if (isset($study->dataFile->uri)) {
+                $api->dataFileDel($study->dataFile->uri);
+                \Drupal::messenger()->addMessage(t("Deleted DataFile with following URI: ".$study->dataFile->uri));      
               }
             }
             // DELETE STD
-            $api->sddDel($uri);
-            \Drupal::messenger()->addMessage(t("Deleted STD with following URI: ".$sdd->uri));      
+            $api->studyDel($uri);
+            \Drupal::messenger()->addMessage(t("Deleted STD with following URI: ".$study->uri));      
           } 
         }
         \Drupal::messenger()->addMessage(t("Selected " . $this->plural_class_name . " has/have been deleted successfully."));      
@@ -359,30 +375,30 @@ class STDSelectForm extends FormBase {
     }  
 
     // INGEST STD
-    if ($button_name === 'ingest_sdd') {
+    if ($button_name === 'ingest_std') {
       if (sizeof($rows) < 1) {
         \Drupal::messenger()->addWarning(t("Select the exact " . $this->single_class_name . " to be ingested."));      
       } else if ((sizeof($rows) > 1)) {
         \Drupal::messenger()->addWarning(t("No more than one " . $this->single_class_name . " can be ingested at once."));      
       } else {
         $api = \Drupal::service('rep.api_connector');
-        if ($this->element_type == 'sdd') {
+        if ($this->element_type == 'std') {
           $first = array_shift($rows);
-          $sdd = $api->parseObjectResponse($api->getUri($first),'getUri');
-          if ($sdd == NULL) {
+          $study = $api->parseObjectResponse($api->getUri($first),'getUri');
+          if ($study == NULL) {
             \Drupal::messenger()->addMessage(t("Failed to retrieve datafile to be ingested."));
-            $form_state->setRedirectUrl(Utils::selectBackUrl('sdd'));
+            $form_state->setRedirectUrl(Utils::selectBackUrl('std'));
             return;
           } 
           //dpm($sdd->dataFile->id);
-          $msg = $api->parseObjectResponse($api->uploadSTD($sdd),'uploadSTD');
+          $msg = $api->parseObjectResponse($api->uploadTemplate("std", $study),'uploadTemplate');
           if ($msg == NULL) {
             \Drupal::messenger()->addError(t("Selected " . $this->single_class_name . " FAILED to be submitted for ingestion."));      
-            $form_state->setRedirectUrl(Utils::selectBackUrl('sdd'));
+            $form_state->setRedirectUrl(Utils::selectBackUrl('std'));
             return;
           }
           \Drupal::messenger()->addMessage(t("Selected " . $this->single_class_name . " has been submitted for ingestion."));      
-          $form_state->setRedirectUrl(Utils::selectBackUrl('sdd'));
+          $form_state->setRedirectUrl(Utils::selectBackUrl('std'));
           return;
         } 
       }
