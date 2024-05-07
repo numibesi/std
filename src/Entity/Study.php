@@ -28,6 +28,9 @@ class Study {
     $root_url = \Drupal::request()->getBaseUrl();
 
     $output = array();
+    if ($list == NULL) {
+      return $output;
+    }
     foreach ($list as $element) {
       $uri = ' ';
       if ($element->uri != NULL) {
