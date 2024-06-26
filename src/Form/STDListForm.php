@@ -5,6 +5,7 @@ namespace Drupal\std\Form;
 use Drupal\Core\Form\FormBase;
 use Drupal\Core\Form\FormStateInterface;
 use Drupal\rep\ListKeywordPage;
+use Drupal\std\Entity\DSG;
 use Drupal\std\Entity\Study;
 use Drupal\std\Entity\StudyRole;
 use Drupal\std\Entity\StudyObjectCollection;
@@ -82,6 +83,13 @@ class STDListForm extends FormBase {
     $output = array();    
     switch ($elementtype) {
 
+      // DSG
+      case "dsg":
+        $class_name = "DSGs";
+        $header = DSG::generateHeader();
+        $output = DSG::generateOutput($this->getList());    
+        break;
+  
       // STUDY
       case "study":
         $class_name = "Studies";

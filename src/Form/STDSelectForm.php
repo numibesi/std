@@ -9,7 +9,7 @@ use Drupal\Component\Serialization\Json;
 use Drupal\file\Entity\File;
 use Drupal\rep\ListManagerEmailPage;
 use Drupal\rep\Utils;
-use Drupal\std\Entity\STD;
+use Drupal\std\Entity\DSG;
 use Drupal\std\Entity\Study;
 use Drupal\std\Entity\StudyRole;
 use Drupal\std\Entity\VirtualColumn;
@@ -100,6 +100,7 @@ class STDSelectForm extends FormBase {
     // RETRIEVE ELEMENTS
     $this->setList(ListManagerEmailPage::exec($this->element_type, $this->manager_email, $page, $pagesize));
 
+    //dpm($this->element_type);
     //dpm($this->getList()[0]->dataFile);
 
     $this->single_class_name = "";
@@ -107,11 +108,11 @@ class STDSelectForm extends FormBase {
     switch ($this->element_type) {
 
       // ELEMENTS
-      case "std":
-        $this->single_class_name = "STD";
-        $this->plural_class_name = "STDs";
-        $header = STD::generateHeader();
-        $output = STD::generateOutput($this->getList());    
+      case "dsg":
+        $this->single_class_name = "DSG";
+        $this->plural_class_name = "DSGs";
+        $header = DSG::generateHeader();
+        $output = DSG::generateOutput($this->getList());    
         break;
       case "study":
         $this->single_class_name = "Study";
@@ -181,26 +182,21 @@ class STDSelectForm extends FormBase {
         '#name' => 'manage_soc',
       ];
     }
-    if ($this->element_type == "std") {
-      $form['download_std'] = [
-        '#type' => 'submit',
-        '#value' => $this->t('Download Selected ' . $this->single_class_name),
-        '#name' => 'download_std',
-      ];
-      $form['ingest_std'] = [
+    if ($this->element_type == "dsg") {
+      $form['ingest_dsg'] = [
         '#type' => 'submit',
         '#value' => $this->t('Ingest Selected ' . $this->single_class_name),
-        '#name' => 'ingest_std',
+        '#name' => 'ingest_dsg',
         '#attributes' => [
           'class' => ['use-ajax'],
           'data-dialog-type' => 'modal',
           'data-dialog-options' => Json::encode(['width' => 700, 'height' => 400]),
         ],  
       ];
-      $form['uningest_std'] = [
+      $form['uningest_dsg'] = [
         '#type' => 'submit',
         '#value' => $this->t('Uningest Selected ' . $this->plural_class_name),
-        '#name' => 'uningest_std',
+        '#name' => 'uningest_dsg',
       ];  
     }
     $form['element_table'] = [
@@ -255,8 +251,8 @@ class STDSelectForm extends FormBase {
 
     // ADD ELEMENT
     if ($button_name === 'add_element') {
-      if ($this->element_type == 'std') {
-        $url = Url::fromRoute('std.add_std');
+      if ($this->element_type == 'dsg') {
+        $url = Url::fromRoute('std.add_dsg');
       } 
       if ($this->element_type == 'study') {
         $url = Url::fromRoute('std.add_study');
@@ -284,8 +280,8 @@ class STDSelectForm extends FormBase {
         \Drupal::messenger()->addMessage(t("No more than one " . $this->single_class_name . " can be edited at once."));      
       } else {
         $first = array_shift($rows);
-        if ($this->element_type == 'std') {
-          $url = Url::fromRoute('std.edit_std', ['stduri' => base64_encode($first)]);
+        if ($this->element_type == 'dsg') {
+          $url = Url::fromRoute('std.edit_dsg', ['dsguri' => base64_encode($first)]);
         } 
         if ($this->element_type == 'study') {
           $url = Url::fromRoute('std.edit_study', ['studyuri' => base64_encode($first)]);
@@ -313,8 +309,8 @@ class STDSelectForm extends FormBase {
       } else {
         $api = \Drupal::service('rep.api_connector');
         foreach($rows as $uri) {
-          if ($this->element_type == 'std') {
-            $api->studyDel($uri);
+          if ($this->element_type == 'dsg') {
+            $api->dsgDel($uri);
           } 
           if ($this->element_type == 'study') {
             $api->studyDel($uri);
@@ -331,7 +327,7 @@ class STDSelectForm extends FormBase {
           if ($this->element_type == 'virtualcolumn') {
             $api->virtualColumnDel($uri);
           } 
-          if ($this->element_type == 'std') {
+          if ($this->element_type == 'dsg') {
             $study = $api->parseObjectResponse($api->getUri($uri),'getUri');
             if ($study != NULL && $study->dataFile != NULL) {
 
@@ -350,9 +346,9 @@ class STDSelectForm extends FormBase {
                 \Drupal::messenger()->addMessage(t("Deleted DataFile with following URI: ".$study->dataFile->uri));      
               }
             }
-            // DELETE STD
-            $api->studyDel($uri);
-            \Drupal::messenger()->addMessage(t("Deleted STD with following URI: ".$study->uri));      
+            // DELETE DSG
+            $api->dsgDel($uri);
+            \Drupal::messenger()->addMessage(t("Deleted DSG with following URI: ".$study->uri));      
           } 
         }
         \Drupal::messenger()->addMessage(t("Selected " . $this->plural_class_name . " has/have been deleted successfully."));      
@@ -374,42 +370,89 @@ class STDSelectForm extends FormBase {
       } 
     }  
 
-    // INGEST STD
-    if ($button_name === 'ingest_std') {
+    // INGEST DSG
+    if ($button_name === 'ingest_dsg') {
       if (sizeof($rows) < 1) {
         \Drupal::messenger()->addWarning(t("Select the exact " . $this->single_class_name . " to be ingested."));      
       } else if ((sizeof($rows) > 1)) {
         \Drupal::messenger()->addWarning(t("No more than one " . $this->single_class_name . " can be ingested at once."));      
       } else {
         $api = \Drupal::service('rep.api_connector');
-        if ($this->element_type == 'std') {
+        if ($this->element_type == 'dsg') {
           $first = array_shift($rows);
           $study = $api->parseObjectResponse($api->getUri($first),'getUri');
           if ($study == NULL) {
             \Drupal::messenger()->addMessage(t("Failed to retrieve datafile to be ingested."));
-            $form_state->setRedirectUrl(Utils::selectBackUrl('std'));
+            $form_state->setRedirectUrl(self::backSelect('dsg'));
             return;
           } 
           //dpm($sdd->dataFile->id);
-          $msg = $api->parseObjectResponse($api->uploadTemplate("std", $study),'uploadTemplate');
+          $msg = $api->parseObjectResponse($api->uploadTemplate("dsg", $study),'uploadTemplate');
           if ($msg == NULL) {
             \Drupal::messenger()->addError(t("Selected " . $this->single_class_name . " FAILED to be submitted for ingestion."));      
-            $form_state->setRedirectUrl(Utils::selectBackUrl('std'));
+            $form_state->setRedirectUrl(self::backSelect('dsg'));
             return;
           }
           \Drupal::messenger()->addMessage(t("Selected " . $this->single_class_name . " has been submitted for ingestion."));      
-          $form_state->setRedirectUrl(Utils::selectBackUrl('std'));
+          $form_state->setRedirectUrl(self::backSelect('dsg'));
           return;
         } 
       }
     }  
 
+    // UNINGEST DSG
+    if ($button_name === 'uningest_dsg') {
+      if (sizeof($rows) < 1) {
+        \Drupal::messenger()->addWarning(t("Select the exact " . $this->single_class_name . " to be uningested."));      
+      } else if ((sizeof($rows) > 1)) {
+        \Drupal::messenger()->addWarning(t("No more than one " . $this->single_class_name . " can be uningested at once."));      
+      } else {
+        $api = \Drupal::service('rep.api_connector');
+        if ($this->element_type == 'dsg') {
+          
+          $first = array_shift($rows);
+          $newDSG = new DSG();
+          $dsg = $api->parseObjectResponse($api->getUri($first),'getUri');
+          if ($dsg == NULL) {
+            \Drupal::messenger()->addMessage(t("Failed to retrieve DSG to be uningested."));
+            return;
+          } 
+          $newDSG->setPreservedDSG($dsg);
+          $df = $api->parseObjectResponse($api->getUri($dsg->hasDataFile),'getUri');
+          if ($df == NULL) {
+            \Drupal::messenger()->addMessage(t("Failed to retrieve DSG's datafile to be uningested."));
+            return;
+          } 
+          $newDSG->setPreservedDF($df);
+          $msg = $api->parseObjectResponse($api->uningestMT($dsg->uri),'uningestMT');
+          if ($msg == NULL) {
+            \Drupal::messenger()->addError(t("Selected " . $this->single_class_name . " FAILED to be uningested."));      
+            return;
+          }
+          $newDSG->savePreservedDSG();
+          \Drupal::messenger()->addMessage(t("Selected " . $this->single_class_name . " has been uningested."));      
+          return;
+        } 
+      }
+    }  
+    
     // BACK TO MAIN PAGE
     if ($button_name === 'back') {
       $url = Url::fromRoute('std.search');
       $form_state->setRedirectUrl($url);
     }  
 
+  }
+
+  /**
+   * {@inheritdoc}
+   */   
+  public static function backSelect($elementType) {
+    $url = Url::fromRoute('std.select_element');
+    $url->setRouteParameter('elementtype', $elementType);
+    $url->setRouteParameter('page', 0);
+    $url->setRouteParameter('pagesize', 12);
+    return $url;
   }
   
 }

@@ -37,24 +37,34 @@ std.select_element:
   options:
     no_cache: 'TRUE'
 
-# STD CRUD options
-
-std.add_std:
-  path: 'std/manage/addstd'
+std.property_element:
+  path: 'std/property/{elementuri}/{property}/{elementtype}/{page}/{pagesize}'
   defaults:
-    _form: '\Drupal\std\Form\AddSTDForm'
-    _title: 'Add STD Template'    
+    _form: '\Drupal\std\Form\STDPropertyForm'
   requirements:
     _permission: 'access content'
     _custom_access_check: 'TRUE'    
   options:
     no_cache: 'TRUE'
 
-std.edit_std:
-  path: 'std/manage/editstd/{stduri}'
+# DSG CRUD options
+
+std.add_dsg:
+  path: 'std/manage/adddsg'
   defaults:
-    _form: '\Drupal\std\Form\EditSTDForm'
-    _title: 'Edit STD Template'    
+    _form: '\Drupal\std\Form\AddDSGForm'
+    _title: 'Add DSG Template'    
+  requirements:
+    _permission: 'access content'
+    _custom_access_check: 'TRUE'    
+  options:
+    no_cache: 'TRUE'
+
+std.edit_dsg:
+  path: 'std/manage/editdsg/{dsguri}'
+  defaults:
+    _form: '\Drupal\std\Form\EditDSGForm'
+    _title: 'Edit DSG Template'    
   requirements:
     _permission: 'access content'  
     _custom_access_check: 'TRUE'      

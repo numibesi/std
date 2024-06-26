@@ -18,12 +18,12 @@ std.search_option:
   requirements:
    _permission: 'access content'
    
-std.manage_std_template:
-  title: Manage STD Templates
-  description: Manage STD Templates
+std.manage_dsg_template:
+  title: Manage DSG Templates
+  description: Manage DSG Templates
   route_name: std.select_element
   route_parameters:
-    elementtype: 'std'
+    elementtype: 'dsg'
     page: '1'
     pagesize: '10'
   parent: std.top_level
