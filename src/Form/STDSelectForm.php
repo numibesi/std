@@ -347,8 +347,8 @@ class STDSelectForm extends FormBase {
               }
             }
             // DELETE DSG
-            $api->dsgDel($uri);
-            \Drupal::messenger()->addMessage(t("Deleted DSG with following URI: ".$study->uri));      
+            //$api->dsgDel($uri);
+            //\Drupal::messenger()->addMessage(t("Deleted DSG with following URI: ".$study->uri));      
           } 
         }
         \Drupal::messenger()->addMessage(t("Selected " . $this->plural_class_name . " has/have been deleted successfully."));      
