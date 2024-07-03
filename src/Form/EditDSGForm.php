@@ -112,7 +112,7 @@ class EditDSGForm extends FormBase {
       '"typeUri":"'.HASCO::DSG.'",'.
       '"hascoTypeUri":"'.HASCO::DSG.'",'.
       '"label":"'.$form_state->getValue('dsg_name').'",'.
-      '"hasDataFile":"'.$this->getDSG()->dataFile->uri.'",'.          
+      '"hasDataFileUri":"'.$this->getDSG()->hasDataFile->uri.'",'.          
       '"comment":"'.$form_state->getValue('dsg_comment').'",'.
       '"hasSIRManagerEmail":"'.$useremail.'"}';
 

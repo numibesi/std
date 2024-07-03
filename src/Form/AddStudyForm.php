@@ -221,7 +221,6 @@ class AddStudyForm extends FormBase {
     if ($button_name === 'delete_pi') {
       //$selected_value = $form_state->getValue('study_pi');
       //unset($this->pi['value2']);
-      dpm('IN SUBMIT FORM');      
       return;
     } 
 

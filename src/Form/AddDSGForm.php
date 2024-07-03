@@ -105,7 +105,7 @@ class AddDSGForm extends FormBase {
           '"typeUri":"'.HASCO::DSG.'",'.
           '"hascoTypeUri":"'.HASCO::DSG.'",'.
           '"label":"'.$form_state->getValue('dsg_name').'",'.
-          '"hasDataFile":"'.$newDataFileUri.'",'.          
+          '"hasDataFileUri":"'.$newDataFileUri.'",'.          
           '"comment":"'.$form_state->getValue('dsg_description').'",'.
           '"hasSIRManagerEmail":"'.$useremail.'"}';
 
@@ -114,7 +114,6 @@ class AddDSGForm extends FormBase {
         // Set the status to FILE_STATUS_PERMANENT.
         $file_entity->set('status', FILE_STATUS_PERMANENT);
         $file_entity->save();
-        dpm($file_entity);
         \Drupal::messenger()->addMessage(t('File uploaded successfully.'));
 
         $api = \Drupal::service('rep.api_connector');

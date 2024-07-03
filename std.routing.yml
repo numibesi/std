@@ -30,7 +30,7 @@ std.list_element:
 std.select_element:
   path: 'std/select/{elementtype}/{page}/{pagesize}'
   defaults:
-    _form: '\Drupal\std\Form\STDSelectForm'
+    _form: '\Drupal\std\Form\STDSelectCardsForm'
   requirements:
     _permission: 'access content'
     _custom_access_check: 'TRUE'    
@@ -72,6 +72,17 @@ std.edit_dsg:
     no_cache: 'TRUE'
 
 # Study CRUD options
+
+std.manage_study:
+  path: 'std/manage/managestudy/{studyuri}'
+  defaults:
+    _form: '\Drupal\std\Form\ManageStudyForm'
+    _title: 'Manage Study'    
+  requirements:
+    _permission: 'access content'  
+    _custom_access_check: 'TRUE'      
+  options:
+    no_cache: 'TRUE'
 
 std.add_study:
   path: 'std/manage/addstudy'

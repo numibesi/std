@@ -36,12 +36,20 @@ class StudyObjectCollection {
       }
       $root_url = \Drupal::request()->getBaseUrl();
       $encodedUri = rawurlencode(rawurlencode($element->uri));
+      $socreference = " ";
+      if ($element->virtualColumn != NULL && $element->virtualColumn->socreference != NULL) {
+        $socreference = $element->virtualColumn->socreference;
+      }
+      $groundingLabel = " ";
+      if ($element->virtualColumn != NULL && $element->virtualColumn->groundingLabel != NULL) {
+        $groundingLabel = $element->virtualColumn->groundingLabel;
+      }
       $output[$element->uri] = [
           'soc_uri' => t('<a href="'.$root_url.REPGUI::DESCRIBE_PAGE.
                         base64_encode($element->uri).'">'.Utils::namespaceUri($element->uri).'</a>'),         
-          'soc_reference' => $element->socreference,     
+          'soc_reference' => $socreference,     
           'soc_label' => $element->label,     
-          'soc_grounding_label' => $element->groundingLabel,
+          'soc_grounding_label' => $groundingLabel,
       ];
     }
     return $output;

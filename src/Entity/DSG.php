@@ -28,7 +28,7 @@ class DSG {
     }
     $this->preservedDSG->uri = $dsg->uri;
     $this->preservedDSG->label = $dsg->label;
-    $this->preservedDSG->hasDataFile = $dsg->hasDataFile;
+    $this->preservedDSG->hasDataFileUri = $dsg->hasDataFileUri;
     $this->preservedDSG->comment = $dsg->comment;          
     $this->preservedDSG->hasSIRManagerEmail = $dsg->hasSIRManagerEmail;
   }
@@ -93,30 +93,34 @@ class DSG {
       $log = ' ';
       $download = ' ';
       $root_url = \Drupal::request()->getBaseUrl();
-      if ($element->dataFile != NULL) {
+      if ($element->hasDataFile != NULL) {
 
         // RETRIEVE DATAFILE BY URI
         //$api = \Drupal::service('rep.api_connector');
         //$dataFile = $api->parseObjectResponse($api->getUri($element->hasDataFile),'getUri');
 
-        if ($element->dataFile->filename != NULL && 
-            $element->dataFile->filename != '') {
-          $filename = $element->dataFile->filename;
+        if ($element->hasDataFile->filename != NULL && 
+            $element->hasDataFile->filename != '') {
+          $filename = $element->hasDataFile->filename;
         }
-        if ($element->dataFile->fileStatus != NULL && 
-            $element->dataFile->fileStatus != '') {
-          if ($element->dataFile->fileStatus == Constant::FILE_STATUS_UNPROCESSED) {
+        if ($element->hasDataFile->fileStatus != NULL && 
+            $element->hasDataFile->fileStatus != '') {
+          if ($element->hasDataFile->fileStatus == Constant::FILE_STATUS_UNPROCESSED) {
             $filestatus = '<b><font style="color:#ff0000;">'.Constant::FILE_STATUS_UNPROCESSED.'</font></b>';
-          } else if ($element->dataFile->fileStatus == Constant::FILE_STATUS_PROCESSED) {
+          } else if ($element->hasDataFile->fileStatus == Constant::FILE_STATUS_PROCESSED) {
             $filestatus = '<b><font style="color:#008000;">'.Constant::FILE_STATUS_PROCESSED.'</font></b>';
-          } else if ($element->dataFile->fileStatus == Constant::FILE_STATUS_WORKING) {
+          } else if ($element->hasDataFile->fileStatus == Constant::FILE_STATUS_WORKING) {
             $filestatus = '<b><font style="color:#ffA500;">'.Constant::FILE_STATUS_WORKING.'</font></b>';
-          } else {
+          } else if ($element->hasDataFile->fileStatus == Constant::FILE_STATUS_PROCESSED_STD) {
+            $filestatus = '<b><font style="color:#ffA500;">'.Constant::FILE_STATUS_PROCESSED_STD.'</font></b>';
+          } else if ($element->hasDataFile->fileStatus == Constant::FILE_STATUS_WORKING_STD) {
+            $filestatus = '<b><font style="color:#ffA500;">'.Constant::FILE_STATUS_WORKING_STD.'</font></b>';
+            } else {
             $filestatus = ' ';
           }
         }
-        if (isset($element->dataFile->log) && $element->dataFile->log != NULL) {
-          $link = $root_url.REPGUI::DATAFILE_LOG.base64_encode($element->dataFile->uri);
+        if (isset($element->hasDataFile->log) && $element->hasDataFile->log != NULL) {
+          $link = $root_url.REPGUI::DATAFILE_LOG.base64_encode($element->hasDataFile->uri);
           $log = '<a href="' . $link . '" class="use-ajax btn btn-primary btn-sm" '.
                  'data-dialog-type="modal" '.
                  'data-dialog-options=\'{"width": 700}\' role="button">Read</a>';
@@ -124,10 +128,10 @@ class DSG {
           //$log = '<a href="'.$link.'" class="btn btn-primary btn-sm" role="button">Read</a>';
         } 
         $downloadLink = '';
-        if ($element->dataFile->id != NULL && $element->dataFile->id != '') {
-          $file_entity = \Drupal\file\Entity\File::load($element->dataFile->id);
+        if ($element->hasDataFile->id != NULL && $element->hasDataFile->id != '') {
+          $file_entity = \Drupal\file\Entity\File::load($element->hasDataFile->id);
           if ($file_entity != NULL) {
-            $downloadLink = $root_url.REPGUI::DATAFILE_DOWNLOAD.base64_encode($element->dataFile->uri);
+            $downloadLink = $root_url.REPGUI::DATAFILE_DOWNLOAD.base64_encode($element->hasDataFile->uri);
             $download = '<a href="'.$downloadLink.'" class="btn btn-primary btn-sm" role="button" disabled>Get It</a>';
           } 
         }  
@@ -161,11 +165,11 @@ class DSG {
           '"fileStatus":"'.Constant::FILE_STATUS_UNPROCESSED.'",'.          
           '"hasSIRManagerEmail":"'.$this->getPreservedDF()->hasSIRManagerEmail.'"}';
 
-      $kgrJSON = '{"uri":"'. $this->getPreservedDSG()->uri .'",'.
+      $dsgJSON = '{"uri":"'. $this->getPreservedDSG()->uri .'",'.
           '"typeUri":"'.HASCO::DSG.'",'.
           '"hascoTypeUri":"'.HASCO::DSG.'",'.
           '"label":"'.$this->getPreservedDSG()->label.'",'.
-          '"hasDataFile":"'.$this->getPreservedDSG()->hasDataFile.'",'.          
+          '"hasDataFileUri":"'.$this->getPreservedDSG()->hasDataFileUri.'",'.          
           '"comment":"'.$this->getPreservedDSG()->comment.'",'.
           '"hasSIRManagerEmail":"'.$this->getPreservedDSG()->hasSIRManagerEmail.'"}';
 

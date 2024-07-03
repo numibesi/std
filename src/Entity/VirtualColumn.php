@@ -30,8 +30,8 @@ class VirtualColumn {
       }
       $uri = Utils::namespaceUri($uri);
       $study = ' ';
-      if ($element->study != NULL && $element->study->label != NULL) {
-        $study = $element->study->label;
+      if ($element->isMemberOf != NULL && $element->ismemberOf->label != NULL) {
+        $study = $element->isMemberOf->label;
       }
       $soc = ' ';
       if ($element->socreference != NULL) {

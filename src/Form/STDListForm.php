@@ -5,11 +5,11 @@ namespace Drupal\std\Form;
 use Drupal\Core\Form\FormBase;
 use Drupal\Core\Form\FormStateInterface;
 use Drupal\rep\ListKeywordPage;
+use Drupal\rep\Entity\StudyObject;
 use Drupal\std\Entity\DSG;
 use Drupal\std\Entity\Study;
 use Drupal\std\Entity\StudyRole;
 use Drupal\std\Entity\StudyObjectCollection;
-use Drupal\std\Entity\StudyObject;
 use Drupal\std\Entity\VirtualColumn;
 
 class STDListForm extends FormBase {

@@ -51,6 +51,7 @@ class EditVirtualColumnForm extends FormBase {
       $form_state->setRedirectUrl(Utils::selectBackUrl('virtualcolumn'));
     } else {
       $this->setVirtualColumn($virtualColumn);
+      //dpm($virtualColumn);
     }
     
     $study = ' ';
