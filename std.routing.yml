@@ -37,6 +37,16 @@ std.select_element:
   options:
     no_cache: 'TRUE'
 
+std.select_element_bystudy:
+  path: 'std/selectbystudy/{studyuri}/{elementtype}/{page}/{pagesize}'
+  defaults:
+    _form: '\Drupal\std\Form\STDSelectByStudyForm'
+  requirements:
+    _permission: 'access content'
+    _custom_access_check: 'TRUE'    
+  options:
+    no_cache: 'TRUE'
+
 std.property_element:
   path: 'std/property/{elementuri}/{property}/{elementtype}/{page}/{pagesize}'
   defaults:

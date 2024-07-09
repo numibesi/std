@@ -61,16 +61,16 @@ class EditVirtualColumnForm extends FormBase {
       $study = Utils::fieldToAutocomplete($this->getVirtualColumn()->study->uri,$this->getVirtualColumn()->study->label);
     }
 
-    $form['virtualcolumn_soc_reference'] = [
-      '#type' => 'textfield',
-      '#title' => $this->t("SOC Reference (must starts with '??')"),
-      '#default_value' => $this->getVirtualColumn()->label,
-    ];
     $form['virtualcolumn_study'] = [
       '#type' => 'textfield',
       '#title' => $this->t('Study (required)'),
       '#default_value' => $study,
       '#autocomplete_route_name' => 'std.study_autocomplete',
+    ];
+    $form['virtualcolumn_soc_reference'] = [
+      '#type' => 'textfield',
+      '#title' => $this->t("SOC Reference (must starts with '??')"),
+      '#default_value' => $this->getVirtualColumn()->label,
     ];
     $form['virtualcolumn_groundinglabel'] = [
       '#type' => 'textfield',

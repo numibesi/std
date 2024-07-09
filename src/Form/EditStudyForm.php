@@ -45,12 +45,12 @@ class EditStudyForm extends FormBase {
     $this->setStudyUri($uri_decode);
 
     $api = \Drupal::service('rep.api_connector');
-    $svar = $api->parseObjectResponse($api->getUri($this->getStudyUri()),'getUri');
-    if ($svar == NULL) {
+    $study = $api->parseObjectResponse($api->getUri($this->getStudyUri()),'getUri');
+    if ($study == NULL) {
       \Drupal::messenger()->addMessage(t("Failed to retrieve Study."));
       $form_state->setRedirectUrl(Utils::selectBackUrl('study'));
     } else {
-      $this->setStudy($svar);
+      $this->setStudy($study);
     }
 
     $form['study_short_name'] = [

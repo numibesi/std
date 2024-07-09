@@ -11,7 +11,7 @@ use Drupal\file\Entity\File;
 use Drupal\rep\ListManagerEmailPage;
 use Drupal\rep\Utils;
 use Drupal\rep\Entity\StudyObject;
-use Drupal\std\Entity\DSG;
+use Drupal\rep\Entity\MetadataTemplate;
 use Drupal\std\Entity\Study;
 use Drupal\std\Entity\StudyRole;
 use Drupal\std\Entity\VirtualColumn;
@@ -105,8 +105,8 @@ class STDSelectCardsForm extends FormBase {
         case "dsg":
             $this->single_class_name = "DSG";
             $this->plural_class_name = "DSGs";
-            $header = DSG::generateHeader();
-            $output = DSG::generateOutput($this->getList());    
+            $header = MetadataTemplate::generateHeader();
+            $output = MetadataTemplate::generateOutput('dsg',$this->getList());    
             break;
         case "study":
             $this->single_class_name = "Study";
@@ -206,7 +206,7 @@ class STDSelectCardsForm extends FormBase {
           $index++; 
           $form['element_' . $index] = $card;
       }
-    } else { 
+    } else {
       // Add elements as table
       $form['element_table'] = [
         '#type' => 'tableselect',
@@ -375,8 +375,8 @@ class STDSelectCardsForm extends FormBase {
       } 
     }  
 
-    // INGEST DSG
-    if ($button_name === 'ingest_dsg') {
+    // INGEST MT
+    if ($button_name === 'ingest_mt') {
       if (sizeof($rows) < 1) {
         \Drupal::messenger()->addWarning(t("Select the exact " . $this->single_class_name . " to be ingested."));      
       } else if ((sizeof($rows) > 1)) {

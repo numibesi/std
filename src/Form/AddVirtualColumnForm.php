@@ -20,15 +20,14 @@ class AddVirtualColumnForm extends FormBase {
    * {@inheritdoc}
    */
   public function buildForm(array $form, FormStateInterface $form_state) {
-    $form['virtualcolumn_soc_reference'] = [
-      '#type' => 'textfield',
-      '#title' => $this->t("SOC Reference (must starts with '??')"),
-    ];
     $form['virtualcolumn_study'] = [
       '#type' => 'textfield',
       '#title' => $this->t('Study (required)'),
       '#autocomplete_route_name' => 'std.study_autocomplete',
-
+    ];
+    $form['virtualcolumn_soc_reference'] = [
+      '#type' => 'textfield',
+      '#title' => $this->t("SOC Reference (must starts with '??')"),
     ];
     $form['virtualcolumn_groundinglabel'] = [
       '#type' => 'textfield',

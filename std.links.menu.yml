@@ -3,7 +3,7 @@ std.top_level:
   description: Manage Study Elements
   route_name: rep.about
   menu_name: main
-  weight: 80
+  weight: 20
   requirements:
     _permission: 'access content'
     
@@ -18,20 +18,95 @@ std.search_option:
   requirements:
    _permission: 'access content'
    
+std.divider1:
+  title: '_________________________________'
+  #title: '____________ (Metadata Templates)'
+  parent: std.top_level
+  menu_name: main
+  weight: 9
+#  class: 'menu-divider'
+#  options:
+#    attributes:
+#      class:
+#        - 'menu-divider'
+  route_name: '<none>'
+
+std.manage_da_files:
+  title: Manage DA Files
+  description: Manage DA Files
+  route_name: rep.select_mt_element
+  route_parameters:
+    elementtype: 'da'
+    page: '1'
+    pagesize: '10'
+    studyuri: 'none'
+  parent: std.top_level
+  menu_name: main
+  weight: 11
+  requirements:
+    _permission: 'access content'
+    _role: 'authenticated'
+
 std.manage_dsg_template:
   title: Manage DSG Templates
   description: Manage DSG Templates
-  route_name: std.select_element
+  route_name: rep.select_mt_element
   route_parameters:
     elementtype: 'dsg'
     page: '1'
     pagesize: '10'
+    studyuri: 'none'
   parent: std.top_level
   menu_name: main
-  weight: 2
+  weight: 12
   requirements:
     _permission: 'access content'
     _role: 'authenticated'
+
+std.manage_dd_template:
+  title: Manage DD Templates
+  description: Manage DD Templates
+  route_name: rep.select_mt_element
+  route_parameters:
+    elementtype: 'dd'
+    page: '1'
+    pagesize: '10'
+    studyuri: 'none'
+  parent: std.top_level
+  menu_name: main
+  weight: 13
+  requirements:
+    _permission: 'access content'
+    _role: 'authenticated'
+
+std.manage_sdd_template:
+  title: Manage SDD Templates
+  description: Manage SDD Templates
+  route_name: rep.select_mt_element
+  route_parameters:
+    elementtype: 'sdd'
+    page: '1'
+    pagesize: '10'
+    studyuri: 'none'
+  parent: std.top_level
+  menu_name: main
+  weight: 14
+  requirements:
+    _permission: 'access content'
+    _role: 'authenticated'
+
+std.divider2:
+  #title: '______________________ (Elements)'
+  title: '_________________________________'
+  parent: std.top_level
+  menu_name: main
+  weight: 20
+#  class: 'menu-divider'
+#  options:
+#    attributes:
+#      class:
+#        - 'menu-divider'
+  route_name: '<none>'
 
 std.manage_study:
   title: Manage Studies
@@ -43,7 +118,7 @@ std.manage_study:
     pagesize: '10'
   parent: std.top_level
   menu_name: main
-  weight: 3
+  weight: 21
   requirements:
     _permission: 'access content'
     _role: 'authenticated'
@@ -58,7 +133,7 @@ std.manage_study_role:
     pagesize: '10'
   parent: std.top_level
   menu_name: main
-  weight: 4
+  weight: 22
   requirements:
     _permission: 'access content'
     _role: 'authenticated'
@@ -73,7 +148,7 @@ std.manage_virtual_column:
     pagesize: '10'
   parent: std.top_level
   menu_name: main
-  weight: 5
+  weight: 23
   requirements:
     _permission: 'access content'
     _role: 'authenticated'
@@ -88,7 +163,7 @@ std.manage_study_object_collection:
     pagesize: '10'
   parent: std.top_level
   menu_name: main
-  weight: 6
+  weight: 24
   requirements:
     _permission: 'access content'
     _role: 'authenticated'
@@ -103,7 +178,7 @@ std.manage_study_object:
     pagesize: '10'
   parent: std.top_level
   menu_name: main
-  weight: 7
+  weight: 25
   requirements:
     _permission: 'access content'
     _role: 'authenticated'

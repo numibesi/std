@@ -41,12 +41,16 @@ class ManageStudyForm extends FormBase {
    * {@inheritdoc}
    */
   public function buildForm(array $form, FormStateInterface $form_state, $studyuri = NULL) {
-    $uri=$studyuri ?? 'default';
-    $uri_decode=base64_decode($uri);
-    $this->setStudyUri($uri_decode);
+    //if ($studyuri == NULL || $studyuri == "") {
+    //  \Drupal::messenger()->addMessage(t("A STUDY URI is required to manage a study."));
+    //  $form_state->setRedirectUrl(Utils::selectBackUrl('study'));
+    //}
 
+    $uri_decode=base64_decode($studyuri);
+    $this->setStudyUri($uri_decode);
     $api = \Drupal::service('rep.api_connector');
-    $study = $api->parseObjectResponse($api->getUri($this->getStudyUri()),'getUri');
+    $study = $api->parseObjectResponse($api->getUri($uri_decode),'getUri');
+    
     if ($study == NULL) {
       \Drupal::messenger()->addMessage(t("Failed to retrieve Study."));
       $form_state->setRedirectUrl(Utils::selectBackUrl('study'));
@@ -61,12 +65,18 @@ class ManageStudyForm extends FormBase {
 
     // Example data for cards
     $cards = array(
-      1 => array('value' => '<h1>0</h1><h3>Data Files<br>&nbsp;</h3>', 'link' => 'http://example.com/card1'),
-      2 => array('value' => '<h1>0</h1><h3>Publications<br>&nbsp;</h3>', 'link' => 'http://example.com/card2'),
-      3 => array('value' => '<h1>0</h1><h3>Roles<br>&nbsp;</h3>', 'link' => 'http://example.com/card3'),
-      4 => array('value' => '<h1>'.$totalVCs.'</h1><h3>Entities<br>&nbsp;</h3>', 'link' => 'http://example.com/card4'),
-      5 => array('value' => '<h1>'.$totalSOCs.'</h1><h3>Object<br>Collections</h3>', 'link' => 'http://example.com/card5'),
-      6 => array('value' => '<h1>'.$totalSOs.'</h1><h3>Subjects<br>&nbsp;</h3>', 'link' => 'http://example.com/card6'),
+      1 => array('value' => '<h1>0</h1><h3>Data Files<br>&nbsp;</h3>', 
+                 'link' => self::urlSelectByStudy($this->getStudy()->uri,'da')),
+      2 => array('value' => '<h1>0</h1><h3>Publications<br>&nbsp;</h3>', 
+                 'link' => 'http://example.com/card2'),
+      3 => array('value' => '<h1>0</h1><h3>Roles<br>&nbsp;</h3>', 
+                 'link' => self::urlSelectByStudy($this->getStudy()->uri,'studyrole')),
+      4 => array('value' => '<h1>'.$totalVCs.'</h1><h3>Entities<br>&nbsp;</h3>', 
+                 'link' => self::urlSelectByStudy($this->getStudy()->uri,'virtualcolumn')),
+      5 => array('value' => '<h1>'.$totalSOCs.'</h1><h3>Object<br>Collections</h3>', 
+                 'link' => self::urlSelectByStudy($this->getStudy()->uri,'studyobjectcollection')),
+      6 => array('value' => '<h1>'.$totalSOs.'</h1><h3>Subjects<br>&nbsp;</h3>', 
+                 'link' => self::urlSelectByStudy($this->getStudy()->uri,'studyobject')),
     );
 
     // First row with 1 filler and 1 card
@@ -251,5 +261,19 @@ class ManageStudyForm extends FormBase {
     } 
     return -1;
   }
+
+  /**
+   * {@inheritdoc}
+   */   
+  public static function urlSelectByStudy($studyuri, $elementType) {
+    // TODO: go back to manage study
+    $url = Url::fromRoute('std.select_element_bystudy');
+    $url->setRouteParameter('studyuri', base64_encode($studyuri));
+    $url->setRouteParameter('elementtype', $elementType);
+    $url->setRouteParameter('page', 0);
+    $url->setRouteParameter('pagesize', 12);
+    return $url->toString();
+  }
+  
 
 }

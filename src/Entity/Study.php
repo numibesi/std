@@ -84,10 +84,12 @@ class Study {
           $url = '';
         }
 
-        $manage_elements = Url::fromRoute('std.manage_study', ['studyuri' => base64_encode($element->uri)]);
-        $view_study = Url::fromRoute('rep.describe_element', ['elementuri' => base64_encode($element->uri)]);
-        $edit_study = Url::fromRoute('std.edit_study', ['studyuri' => base64_encode($element->uri)]);
-        $delete_study = $root_url.REPGUI::DATAFILE_LOG.base64_encode($element->uri);
+        if ($element->uri != NULL && $element->uri != "") {
+          $manage_elements = Url::fromRoute('std.manage_study', ['studyuri' => base64_encode($element->uri)]);
+          $view_study = Url::fromRoute('rep.describe_element', ['elementuri' => base64_encode($element->uri)]);
+          $edit_study = Url::fromRoute('std.edit_study', ['studyuri' => base64_encode($element->uri)]);
+          $delete_study = $root_url.REPGUI::DATAFILE_LOG.base64_encode($element->uri);
+        }
 
         $output[] = [
           '#type' => 'container', // Use container instead of html_tag for better semantics
