@@ -158,7 +158,11 @@ class ManageStudyObjectForm extends FormBase {
     // RETRIEVE TRIGGERING BUTTON
     $triggering_element = $form_state->getTriggeringElement();
     $button_name = $triggering_element['#name'];
-  
+
+    // SET USER ID AND PREVIOUS URL FOR TRACKING STORE URLS
+    $uid = \Drupal::currentUser()->id();
+    $previousUrl = \Drupal::request()->getRequestUri();
+
     // RETRIEVE SELECTED ROWS, IF ANY
     $selected_rows = $form_state->getValue('so_table');
     $rows = [];

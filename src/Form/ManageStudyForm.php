@@ -5,6 +5,7 @@ namespace Drupal\std\Form;
 use Drupal\Core\Form\FormBase;
 use Drupal\Core\Form\FormStateInterface;
 use Drupal\Core\Url;
+use Symfony\Component\HttpFoundation\RedirectResponse;
 use Drupal\rep\Utils;
 use Drupal\rep\Vocabulary\HASCO;
 
@@ -41,6 +42,7 @@ class ManageStudyForm extends FormBase {
    * {@inheritdoc}
    */
   public function buildForm(array $form, FormStateInterface $form_state, $studyuri = NULL) {
+    
     //if ($studyuri == NULL || $studyuri == "") {
     //  \Drupal::messenger()->addMessage(t("A STUDY URI is required to manage a study."));
     //  $form_state->setRedirectUrl(Utils::selectBackUrl('study'));
@@ -53,25 +55,27 @@ class ManageStudyForm extends FormBase {
     
     if ($study == NULL) {
       \Drupal::messenger()->addMessage(t("Failed to retrieve Study."));
-      $form_state->setRedirectUrl(Utils::selectBackUrl('study'));
+      self::backUrl();
     } else {
       $this->setStudy($study);
     }
 
     // get totals for current study
+    $totalDAs = self::extractValue($api->parseObjectResponse($api->getTotalStudyDAs($this->getStudy()->uri),'getTotalStudyDAs'));
+    $totalRoles = self::extractValue($api->parseObjectResponse($api->getTotalStudyRoles($this->getStudy()->uri),'getTotalStudyRoles'));
     $totalVCs = self::extractValue($api->parseObjectResponse($api->getTotalStudyVCs($this->getStudy()->uri),'getTotalStudyVCs'));
     $totalSOCs = self::extractValue($api->parseObjectResponse($api->getTotalStudySOCs($this->getStudy()->uri),'getTotalStudySOCs'));
     $totalSOs = self::extractValue($api->parseObjectResponse($api->getTotalStudySOs($this->getStudy()->uri),'getTotalStudySOs'));
 
     // Example data for cards
     $cards = array(
-      1 => array('value' => '<h1>0</h1><h3>Data Files<br>&nbsp;</h3>', 
+      1 => array('value' => '<h1>'.$totalDAs.'</h1><h3>Data Files<br>&nbsp;</h3>', 
                  'link' => self::urlSelectByStudy($this->getStudy()->uri,'da')),
       2 => array('value' => '<h1>0</h1><h3>Publications<br>&nbsp;</h3>', 
                  'link' => 'http://example.com/card2'),
-      3 => array('value' => '<h1>0</h1><h3>Roles<br>&nbsp;</h3>', 
+      3 => array('value' => '<h1>'.$totalRoles.'</h1><h3>Roles<br>&nbsp;</h3>', 
                  'link' => self::urlSelectByStudy($this->getStudy()->uri,'studyrole')),
-      4 => array('value' => '<h1>'.$totalVCs.'</h1><h3>Entities<br>&nbsp;</h3>', 
+      4 => array('value' => '<h1>'.$totalVCs.'</h1><h3>Virtual Columns</h3><h4>(Entities)</h4>', 
                  'link' => self::urlSelectByStudy($this->getStudy()->uri,'virtualcolumn')),
       5 => array('value' => '<h1>'.$totalSOCs.'</h1><h3>Object<br>Collections</h3>', 
                  'link' => self::urlSelectByStudy($this->getStudy()->uri,'studyobjectcollection')),
@@ -102,11 +106,11 @@ class ManageStudyForm extends FormBase {
                 '#type' => 'markup',
                 '#markup' => '<br><div class="card"><div class="card-body">' .
                   $this->t('<h3>') . ' ' . $this->getStudy()->label . '</h3><br>' .
-                  $this->t('<b>URI</b>: ') . ' ' . $this->getStudy()->uri . '<br><br>' .
-                  $this->t('<b>Name</b>: ') . ' ' . $this->getStudy()->title . '<br><br>' .
-                  $this->t('<b>PI</b>: ') . ' ' . $this->getStudy()->pi->name . '<br><br>' .
-                  $this->t('<b>Institution</b>: ') . ' ' . $this->getStudy()->institution->name . '<br><br>' .
-                  $this->t('<b>Description</b>: ') . ' ' . $this->getStudy()->comment . '<br><br>' .
+                  $this->t('<b>URI</b>: ') . ' ' . $this->getStudy()->uri . '<br>' .
+                  $this->t('<b>Name</b>: ') . ' ' . $this->getStudy()->title . '<br>' .
+                  $this->t('<b>PI</b>: ') . ' ' . $this->getStudy()->pi->name . '<br>' .
+                  $this->t('<b>Institution</b>: ') . ' ' . $this->getStudy()->institution->name . '<br>' .
+                  $this->t('<b>Description</b>: ') . ' ' . $this->getStudy()->comment . '<br>' .
                   '</div></div>',
             ),
         //),
@@ -145,7 +149,7 @@ class ManageStudyForm extends FormBase {
       'card' => array(
           '#type' => 'markup',
           '#markup' => '<div class="card"><div class="card-body text-center">' . $cards[2]['value'] . '</div>' . 
-            '<div class="card-footer text-center"><a href="' . $cards[2]['link'] . '" class="btn btn-secondary">Manage</a></div></div>',
+            '<div class="card-footer text-center"><a href="' . $cards[2]['link'] . '" class="btn btn-secondary disabled">Manage</a></div></div>',
       ),
   );
 
@@ -245,11 +249,8 @@ class ManageStudyForm extends FormBase {
     $triggering_element = $form_state->getTriggeringElement();
     $button_name = $triggering_element['#name'];
 
-    $back_url = Url::fromRoute('std.select_element',['elementtype' => 'study','pagesize' => 10, 'page' => 0]);
-
     if ($button_name === 'back') {
-      $form_state->setRedirectUrl($back_url);
-      return;
+      self::backUrl();
     } 
 
   }
@@ -266,7 +267,9 @@ class ManageStudyForm extends FormBase {
    * {@inheritdoc}
    */   
   public static function urlSelectByStudy($studyuri, $elementType) {
-    // TODO: go back to manage study
+    $uid = \Drupal::currentUser()->id();
+    $previousUrl = \Drupal::request()->getRequestUri();
+    Utils::trackingStoreUrls($uid, $previousUrl, 'std.select_element_bystudy');
     $url = Url::fromRoute('std.select_element_bystudy');
     $url->setRouteParameter('studyuri', base64_encode($studyuri));
     $url->setRouteParameter('elementtype', $elementType);
@@ -274,6 +277,15 @@ class ManageStudyForm extends FormBase {
     $url->setRouteParameter('pagesize', 12);
     return $url->toString();
   }
+ 
+  function backUrl() {
+    $uid = \Drupal::currentUser()->id();
+    $previousUrl = Utils::trackingGetPreviousUrl($uid, 'std.manage_study_elements');
+    if ($previousUrl) {
+      $response = new RedirectResponse($previousUrl);
+      $response->send();
+      return;
+    }
+  }
   
-
 }

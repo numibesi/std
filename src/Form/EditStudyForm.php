@@ -4,6 +4,8 @@ namespace Drupal\std\Form;
 
 use Drupal\Core\Form\FormBase;
 use Drupal\Core\Form\FormStateInterface;
+use Drupal\Core\Url;
+use Symfony\Component\HttpFoundation\RedirectResponse;
 use Drupal\rep\Utils;
 use Drupal\rep\Vocabulary\HASCO;
 
@@ -48,7 +50,8 @@ class EditStudyForm extends FormBase {
     $study = $api->parseObjectResponse($api->getUri($this->getStudyUri()),'getUri');
     if ($study == NULL) {
       \Drupal::messenger()->addMessage(t("Failed to retrieve Study."));
-      $form_state->setRedirectUrl(Utils::selectBackUrl('study'));
+      self::backUrl();
+      return;
     } else {
       $this->setStudy($study);
     }
@@ -110,7 +113,7 @@ class EditStudyForm extends FormBase {
     $button_name = $triggering_element['#name'];
 
     if ($button_name === 'back') {
-      $form_state->setRedirectUrl(Utils::selectBackUrl('study'));
+      self::backUrl();
       return;
     } 
 
@@ -131,13 +134,25 @@ class EditStudyForm extends FormBase {
       $api->studyAdd($studyJson);
     
       \Drupal::messenger()->addMessage(t("Study has been updated successfully."));
-      $form_state->setRedirectUrl(Utils::selectBackUrl('study'));
+      self::backUrl();
+      return;
 
     } catch(\Exception $e) {
       \Drupal::messenger()->addMessage(t("An error occurred while updating Study: ".$e->getMessage()));
-      $form_state->setRedirectUrl(Utils::selectBackUrl('study'));
+      self::backUrl();
+      return;
     }
 
   }
 
+  function backUrl() {
+    $uid = \Drupal::currentUser()->id();
+    $previousUrl = Utils::trackingGetPreviousUrl($uid, 'std.edit_study');
+    if ($previousUrl) {
+      $response = new RedirectResponse($previousUrl);
+      $response->send();
+      return;
+    }
+  }
+  
 }

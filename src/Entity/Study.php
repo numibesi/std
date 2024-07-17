@@ -6,7 +6,6 @@ use Drupal\Core\Url;
 use Drupal\rep\Vocabulary\REPGUI;
 use Drupal\rep\Utils;
 
-
 class Study {
 
   public static function generateHeader() {
@@ -23,8 +22,6 @@ class Study {
   }
 
   public static function generateOutput($list) {
-
-    //dpm($list);
 
     // ROOT URL
     $root_url = \Drupal::request()->getBaseUrl();
@@ -71,77 +68,107 @@ class Study {
         return $output;
     }
 
+    foreach ($output as $uri => $card) {
+        $form['element_' . $index] = $card;
+    }
+
+    $index = 0;
     foreach ($list as $element) {
-        $uri = $element->uri ?? '';
-        $label = $element->label ?? '';
-        $title = $element->title ?? '';
+      $index++; 
+      $uri = $element->uri ?? '';
+      $label = $element->label ?? '';
+      $title = $element->title ?? '';
 
-        $urlComponents = parse_url($uri);
+      $urlComponents = parse_url($uri);
 
-        if (isset($urlComponents['scheme']) && isset($urlComponents['host'])) {
-          $url = Url::fromUri($uri);
-        } else { 
-          $url = '';
-        }
+      if (isset($urlComponents['scheme']) && isset($urlComponents['host'])) {
+        $url = Url::fromUri($uri);
+      } else { 
+        $url = '';
+      }
 
-        if ($element->uri != NULL && $element->uri != "") {
-          $manage_elements = Url::fromRoute('std.manage_study', ['studyuri' => base64_encode($element->uri)]);
-          $view_study = Url::fromRoute('rep.describe_element', ['elementuri' => base64_encode($element->uri)]);
-          $edit_study = Url::fromRoute('std.edit_study', ['studyuri' => base64_encode($element->uri)]);
-          $delete_study = $root_url.REPGUI::DATAFILE_LOG.base64_encode($element->uri);
-        }
+      if ($element->uri != NULL && $element->uri != "") {
+        $previousUrl = base64_encode(\Drupal::request()->getRequestUri());
 
-        $output[] = [
-          '#type' => 'container', // Use container instead of html_tag for better semantics
-          '#attributes' => [
-              'class' => ['card', 'mb-3'],
-          ],
-          'card_body' => [
-              '#type' => 'container', // Use container for the card body
+        $manage_elements_str = base64_encode(Url::fromRoute('std.manage_study_elements', ['studyuri' => base64_encode($element->uri)])->toString());
+        $manage_elements = Url::fromRoute('rep.back_url', [
+          'previousurl' => $previousUrl,
+          'currenturl' => $manage_elements_str,
+          'currentroute' => 'std.manage_study_elements'
+        ]);
+
+        $view_study_str = base64_encode(Url::fromRoute('rep.describe_element', ['elementuri' => base64_encode($element->uri)])->toString());
+        $view_study_route = 'rep.describe_element';
+        $view_study = Url::fromRoute('rep.back_url', [
+          'previousurl' => $previousUrl,
+          'currenturl' => $view_study_str,
+          'currentroute' => 'rep.describe_element'
+        ]);
+
+        $edit_study_str = base64_encode(Url::fromRoute('std.edit_study', ['studyuri' => base64_encode($element->uri)])->toString());
+        $edit_study = Url::fromRoute('rep.back_url', [
+          'previousurl' => $previousUrl,
+          'currenturl' => $edit_study_str,
+          'currentroute' => 'std.edit_study'
+        ]);
+
+        $delete_study = Url::fromRoute('std.delete_study', [
+          'studyuri' => base64_encode($element->uri),
+          'currenturl' => $previousUrl,
+        ]);
+      }
+
+      $output[$index] = [
+        '#type' => 'container', // Use container instead of html_tag for better semantics
+        '#attributes' => [
+            'class' => ['card', 'mb-3'],
+        ],
+        'card_body_'.$index => [
+            '#type' => 'container', // Use container for the card body
+            '#attributes' => [
+                'class' => ['card-body'],
+            ],
+            'title' => [
+                '#markup' => '<h5 class="card-title">' . $label . '</h5>',
+            ],
+            'text' => [
+                '#markup' => '<p class="card-text">'. $title . '<br>' . $uri . '</p>',
+            ],
+            'link1_'.$index   => [
+              '#type' => 'link',
+              '#title' => 'Manage Elements',
+              '#url' => $manage_elements, 
               '#attributes' => [
-                  'class' => ['card-body'],
+                  'class' => ['btn', 'btn-secondary'],
+                  'style' => 'margin-right: 10px;',
               ],
-              'title' => [
-                  '#markup' => '<h5 class="card-title">' . $label . '</h5>',
+            ],
+            'link2_'.$index => [
+              '#type' => 'link',
+              '#title' => 'View',
+              '#url' => $view_study, 
+              '#attributes' => [
+                  'class' => ['btn', 'btn-secondary'],
+                  'style' => 'margin-right: 10px;',
               ],
-              'text' => [
-                  '#markup' => '<p class="card-text">'. $title . '<br>' . $uri . '</p>',
+            ],
+            'link3_'.$index => [
+              '#type' => 'link',
+              '#title' => 'Edit',
+              '#url' => $edit_study, 
+              '#attributes' => [
+                  'class' => ['btn', 'btn-secondary'],
+                  'style' => 'margin-right: 10px;',
               ],
-              'link1' => [
-                '#type' => 'link',
-                '#title' => 'Manage Elements',
-                '#url' => $manage_elements, 
-                '#attributes' => [
-                    'class' => ['btn', 'btn-secondary'],
-                    'style' => 'margin-right: 10px;',
-                ],
+            ],
+            'link4_'.$index => [
+              '#type' => 'link',
+              '#title' => 'Delete',
+              '#url' => $delete_study, 
+              '#attributes' => [
+                  'class' => ['btn', 'btn-secondary'],
               ],
-              'link2' => [
-                '#type' => 'link',
-                '#title' => 'View',
-                '#url' => $view_study, 
-                '#attributes' => [
-                    'class' => ['btn', 'btn-secondary'],
-                    'style' => 'margin-right: 10px;',
-                  ],
-              ],
-              'link3' => [
-                '#type' => 'link',
-                '#title' => 'Edit',
-                '#url' => $edit_study, 
-                '#attributes' => [
-                    'class' => ['btn', 'btn-secondary'],
-                    'style' => 'margin-right: 10px;',
-                  ],
-              ],
-              'link4' => [
-                '#type' => 'link',
-                '#title' => 'Delete',
-                '#url' => $url, 
-                '#attributes' => [
-                    'class' => ['btn', 'btn-secondary'],
-                  ],
-              ],
+            ],
         ],
       ];
     
@@ -149,5 +176,6 @@ class Study {
 
     return $output;
   }
+
 
 }

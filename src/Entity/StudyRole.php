@@ -30,8 +30,8 @@ class StudyRole {
       }
       $uri = Utils::namespaceUri($uri);
       $study = ' ';
-      if ($element->study != NULL && $element->study->label != NULL) {
-        $study = $element->study->label;
+      if ($element->isMemberOf != NULL && $element->isMemberOf->label != NULL) {
+        $study = $element->isMemberOf->label;
       }
       $label = ' ';
       if ($element->label != NULL) {

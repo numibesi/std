@@ -4,8 +4,8 @@ std.top_level:
   route_name: rep.about
   menu_name: main
   weight: 20
-  requirements:
-    _permission: 'access content'
+  #requirements:
+    #_permission: 'access content'
     
 std.search_option:
   title: Search Study Elements
@@ -15,12 +15,11 @@ std.search_option:
   menu_name: main
   enabled: 1
   weight: 1
-  requirements:
-   _permission: 'access content'
+  #requirements:
+   #_permission: 'access content'
    
 std.divider1:
   title: '_________________________________'
-  #title: '____________ (Metadata Templates)'
   parent: std.top_level
   menu_name: main
   weight: 9
@@ -30,6 +29,8 @@ std.divider1:
 #      class:
 #        - 'menu-divider'
   route_name: '<none>'
+  requirements:
+   _permission: 'access content'
 
 std.manage_da_files:
   title: Manage DA Files
@@ -96,7 +97,6 @@ std.manage_sdd_template:
     _role: 'authenticated'
 
 std.divider2:
-  #title: '______________________ (Elements)'
   title: '_________________________________'
   parent: std.top_level
   menu_name: main
@@ -107,11 +107,13 @@ std.divider2:
 #      class:
 #        - 'menu-divider'
   route_name: '<none>'
+  requirements:
+   _permission: 'access content'
 
-std.manage_study:
+std.manage_studies:
   title: Manage Studies
   description: Manage Studies
-  route_name: std.select_element
+  route_name: std.select_study
   route_parameters:
     elementtype: 'study'
     page: '1'
@@ -123,63 +125,63 @@ std.manage_study:
     _permission: 'access content'
     _role: 'authenticated'
 
-std.manage_study_role:
-  title: Manage Study Roles
-  description: Manage Study Roles
-  route_name: std.select_element
-  route_parameters:
-    elementtype: 'studyrole'
-    page: '1'
-    pagesize: '10'
-  parent: std.top_level
-  menu_name: main
-  weight: 22
-  requirements:
-    _permission: 'access content'
-    _role: 'authenticated'
+#std.manage_study_role:
+#  title: Manage Study Roles
+#  description: Manage Study Roles
+#  route_name: std.select_element
+#  route_parameters:
+#    elementtype: 'studyrole'
+#    page: '1'
+#    pagesize: '10'
+#  parent: std.top_level
+#  menu_name: main
+#  weight: 22
+#  requirements:
+#    _permission: 'access content'
+#    _role: 'authenticated'
 
-std.manage_virtual_column:
-  title: Manage Virtual Columns
-  description: Manage Virtual Columns
-  route_name: std.select_element
-  route_parameters:
-    elementtype: 'virtualcolumn'
-    page: '1'
-    pagesize: '10'
-  parent: std.top_level
-  menu_name: main
-  weight: 23
-  requirements:
-    _permission: 'access content'
-    _role: 'authenticated'
+#std.manage_virtual_column:
+#  title: Manage Virtual Columns
+#  description: Manage Virtual Columns
+#  route_name: std.select_element
+#  route_parameters:
+#    elementtype: 'virtualcolumn'
+#    page: '1'
+#    pagesize: '10'
+#  parent: std.top_level
+#  menu_name: main
+#  weight: 23
+#  requirements:
+#    _permission: 'access content'
+#    _role: 'authenticated'
 
-std.manage_study_object_collection:
-  title: Manage Study Object Collections
-  description: Manage Study Object Collections
-  route_name: std.select_element
-  route_parameters:
-    elementtype: 'studyobjectcollection'
-    page: '1'
-    pagesize: '10'
-  parent: std.top_level
-  menu_name: main
-  weight: 24
-  requirements:
-    _permission: 'access content'
-    _role: 'authenticated'
+#std.manage_study_object_collection:
+#  title: Manage Study Object Collections
+#  description: Manage Study Object Collections
+#  route_name: std.select_element
+#  route_parameters:
+#    elementtype: 'studyobjectcollection'
+#    page: '1'
+#    pagesize: '10'
+#  parent: std.top_level
+#  menu_name: main
+#  weight: 24
+#  requirements:
+#    _permission: 'access content'
+#    _role: 'authenticated'
 
-std.manage_study_object:
-  title: Manage Study Objects
-  description: Manage Study Objects
-  route_name: std.select_element
-  route_parameters:
-    elementtype: 'studyobject'
-    page: '1'
-    pagesize: '10'
-  parent: std.top_level
-  menu_name: main
-  weight: 25
-  requirements:
-    _permission: 'access content'
-    _role: 'authenticated'
+#std.manage_study_object:
+#  title: Manage Study Objects
+#  description: Manage Study Objects
+#  route_name: std.select_element
+#  route_parameters:
+#    elementtype: 'studyobject'
+#    page: '1'
+#    pagesize: '10'
+#  parent: std.top_level
+#  menu_name: main
+#  weight: 25
+#  requirements:
+#    _permission: 'access content'
+#    _role: 'authenticated'
 

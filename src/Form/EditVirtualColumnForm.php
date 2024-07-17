@@ -4,6 +4,8 @@ namespace Drupal\std\Form;
 
 use Drupal\Core\Form\FormBase;
 use Drupal\Core\Form\FormStateInterface;
+use Drupal\Core\Url;
+use Symfony\Component\HttpFoundation\RedirectResponse;
 use Drupal\rep\Utils;
 use Drupal\rep\Vocabulary\HASCO;
 
@@ -39,7 +41,7 @@ class EditVirtualColumnForm extends FormBase {
   /**
    * {@inheritdoc}
    */
-  public function buildForm(array $form, FormStateInterface $form_state, $virtualcolumnuri = NULL) {
+  public function buildForm(array $form, FormStateInterface $form_state, $virtualcolumnuri = NULL, $fixstd = NULL) {
     $uri=$virtualcolumnuri ?? 'default';
     $uri_decode=base64_decode($uri);
     $this->setVirtualColumnUri($uri_decode);
@@ -48,25 +50,35 @@ class EditVirtualColumnForm extends FormBase {
     $virtualColumn = $api->parseObjectResponse($api->getUri($this->getVirtualColumnUri()),'getUri');
     if ($virtualColumn == NULL) {
       \Drupal::messenger()->addMessage(t("Failed to retrieve Virtual Column."));
-      $form_state->setRedirectUrl(Utils::selectBackUrl('virtualcolumn'));
+      self::backUrl();
+      return;
     } else {
       $this->setVirtualColumn($virtualColumn);
       //dpm($virtualColumn);
     }
     
     $study = ' ';
-    if ($this->getVirtualColumn()->study != NULL &&
-        $this->getVirtualColumn()->study->uri != NULL &&
-        $this->getVirtualColumn()->study->label != NULL) {
-      $study = Utils::fieldToAutocomplete($this->getVirtualColumn()->study->uri,$this->getVirtualColumn()->study->label);
+    if ($this->getVirtualColumn()->isMemberOf != NULL &&
+        $this->getVirtualColumn()->isMemberOf->uri != NULL &&
+        $this->getVirtualColumn()->isMemberOf->label != NULL) {
+      $study = Utils::fieldToAutocomplete($this->getVirtualColumn()->isMemberOf->uri,$this->getVirtualColumn()->isMemberOf->label);
     }
 
-    $form['virtualcolumn_study'] = [
-      '#type' => 'textfield',
-      '#title' => $this->t('Study (required)'),
-      '#default_value' => $study,
-      '#autocomplete_route_name' => 'std.study_autocomplete',
-    ];
+    if ($fixstd == 'T') {
+      $form['virtualcolumn_study'] = [
+        '#type' => 'textfield',
+        '#title' => $this->t('Study'),
+        '#default_value' => $study,
+        '#disabled' => TRUE,
+      ];
+    } else {
+      $form['virtualcolumn_study'] = [
+        '#type' => 'textfield',
+        '#title' => $this->t('Study'),
+        '#default_value' => $study,
+        '#autocomplete_route_name' => 'std.study_autocomplete',
+      ];
+    }    
     $form['virtualcolumn_soc_reference'] = [
       '#type' => 'textfield',
       '#title' => $this->t("SOC Reference (must starts with '??')"),
@@ -118,7 +130,7 @@ class EditVirtualColumnForm extends FormBase {
     $button_name = $triggering_element['#name'];
 
     if ($button_name === 'back') {
-      $form_state->setRedirectUrl(Utils::selectBackUrl('virtualcolumn'));
+      self::backUrl();
       return;
     } 
 
@@ -130,11 +142,11 @@ class EditVirtualColumnForm extends FormBase {
     } 
 
     $virtualColumnJSON = '{"uri":"'. $this->getVirtualColumn()->uri .'",'.
-      '"superUri":"'.HASCO::VIRTUAL_COLUMN.'",'.
+      '"typeUri":"'.HASCO::VIRTUAL_COLUMN.'",'.
       '"hascoTypeUri":"'.HASCO::VIRTUAL_COLUMN.'",'.
       '"label":"'.$form_state->getValue('virtualcolumn_soc_reference').'",'.
       '"socreference":"'.$form_state->getValue('virtualcolumn_soc_reference').'",'.
-      '"isMemberOf":"' . $studyUri . '",' . 
+      '"isMemberOfUri":"' . $studyUri . '",' . 
       '"groundingLabel":"'.$form_state->getValue('virtualcolumn_groundinglabel').'",'.
       '"hasSIRManagerEmail":"'.$useremail.'"}';
 
@@ -146,13 +158,25 @@ class EditVirtualColumnForm extends FormBase {
       $api->virtualColumnAdd($virtualColumnJSON);
     
       \Drupal::messenger()->addMessage(t("Virtual column has been updated successfully."));
-      $form_state->setRedirectUrl(Utils::selectBackUrl('virtualcolumn'));
+      self::backUrl();
+      return;
 
     } catch(\Exception $e) {
       \Drupal::messenger()->addMessage(t("An error occurred while updating Virtual Column: ".$e->getMessage()));
-      $form_state->setRedirectUrl(Utils::selectBackUrl('virtualcolumn'));
+      self::backUrl();
+      return;
     }
 
+  }
+
+  function backUrl() {
+    $uid = \Drupal::currentUser()->id();
+    $previousUrl = Utils::trackingGetPreviousUrl($uid, 'std.edit_virtualcolumn');
+    if ($previousUrl) {
+      $response = new RedirectResponse($previousUrl);
+      $response->send();
+      return;
+    }
   }
 
 }

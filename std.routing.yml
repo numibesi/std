@@ -4,7 +4,7 @@ std.search:
   path: 'std/list/{elementtype}/{keyword}/{language}/{page}/{pagesize}'
   defaults:
     _form: '\Drupal\std\Form\STDListForm'
-    elementtype: 'entity'
+    elementtype: 'study'
     keyword: '_'
     language: '_'
     page: '1'
@@ -27,10 +27,10 @@ std.list_element:
   options:
     no_cache: 'TRUE'
 
-std.select_element:
+std.select_study:
   path: 'std/select/{elementtype}/{page}/{pagesize}'
   defaults:
-    _form: '\Drupal\std\Form\STDSelectCardsForm'
+    _form: '\Drupal\std\Form\STDSelectStudyForm'
   requirements:
     _permission: 'access content'
     _custom_access_check: 'TRUE'    
@@ -83,11 +83,11 @@ std.edit_dsg:
 
 # Study CRUD options
 
-std.manage_study:
+std.manage_study_elements:
   path: 'std/manage/managestudy/{studyuri}'
   defaults:
     _form: '\Drupal\std\Form\ManageStudyForm'
-    _title: 'Manage Study'    
+    _title: 'Manage Study Elements'    
   requirements:
     _permission: 'access content'  
     _custom_access_check: 'TRUE'      
@@ -116,10 +116,19 @@ std.edit_study:
   options:
     no_cache: 'TRUE'
 
+std.delete_study:
+  path: 'std/manage/deletestudy/{studyuri}/{currenturl}'
+  defaults:
+    _controller: '\Drupal\std\Controller\DeleteStudyController::exec'
+    _title: "Delete Study"
+  requirements:
+    _permission: 'access content'
+    _custom_access_check: 'TRUE'    
+
 # Study Role CRUD options
 
 std.add_studyrole:
-  path: 'std/manage/addstudyrole'
+  path: 'std/manage/addstudyrole/{studyuri}/{fixstd}'
   defaults:
     _form: '\Drupal\std\Form\AddStudyRoleForm'
     _title: 'Add Study Role'    
@@ -130,7 +139,7 @@ std.add_studyrole:
     no_cache: 'TRUE'
 
 std.edit_studyrole:
-  path: 'std/manage/editstudyrole/{studyroleuri}'
+  path: 'std/manage/editstudyrole/{studyroleuri}/{fixstd}'
   defaults:
     _form: '\Drupal\std\Form\EditStudyRoleForm'
     _title: 'Edit Study Role'    
@@ -154,7 +163,7 @@ std.manage_studyobjectcollection:
     no_cache: 'TRUE'
 
 std.add_studyobjectcollection:
-  path: 'std/manage/addstudyobjectcollection/{studyuri}'
+  path: 'std/manage/addstudyobjectcollection/{studyuri}/{fixstd}'
   defaults:
     _form: '\Drupal\std\Form\AddStudyObjectCollectionForm'
     _title: 'Add Study Object Collection'    
@@ -213,7 +222,7 @@ std.edit_studyobject:
 # Virtual Column CRUD options
 
 std.add_virtualcolumn:
-  path: 'std/manage/addvirtualcolumn'
+  path: 'std/manage/addvirtualcolumn/{studyuri}/{fixstd}'
   defaults:
     _form: '\Drupal\std\Form\AddVirtualColumnForm'
     _title: 'Add Virtual Column'    
@@ -224,7 +233,7 @@ std.add_virtualcolumn:
     no_cache: 'TRUE'
 
 std.edit_virtualcolumn:
-  path: 'std/manage/editvirtualcolumn/{virtualcolumnuri}'
+  path: 'std/manage/editvirtualcolumn/{virtualcolumnuri}/{fixstd}'
   defaults:
     _form: '\Drupal\std\Form\EditVirtualColumnForm'
     _title: 'Edit Virtual Columnn'    

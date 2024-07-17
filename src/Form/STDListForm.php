@@ -6,7 +6,7 @@ use Drupal\Core\Form\FormBase;
 use Drupal\Core\Form\FormStateInterface;
 use Drupal\rep\ListKeywordPage;
 use Drupal\rep\Entity\StudyObject;
-use Drupal\std\Entity\DSG;
+use Drupal\rep\Entity\MetadataTemplate;
 use Drupal\std\Entity\Study;
 use Drupal\std\Entity\StudyRole;
 use Drupal\std\Entity\StudyObjectCollection;
@@ -86,8 +86,29 @@ class STDListForm extends FormBase {
       // DSG
       case "dsg":
         $class_name = "DSGs";
-        $header = DSG::generateHeader();
-        $output = DSG::generateOutput($this->getList());    
+        $header = MetadataTemplate::generateHeader();
+        $output = MetadataTemplate::generateOutput('dsg',$this->getList());    
+        break;
+  
+      // DD
+      case "dd":
+        $class_name = "DDs";
+        $header = MetadataTemplate::generateHeader();
+        $output = MetadataTemplate::generateOutput('dd',$this->getList());    
+        break;
+  
+      // SDD
+      case "sdd":
+        $class_name = "SDDs";
+        $header = MetadataTemplate::generateHeader();
+        $output = MetadataTemplate::generateOutput('sdd',$this->getList());    
+        break;
+  
+      // DA
+      case "da":
+        $class_name = "DAs";
+        $header = MetadataTemplate::generateHeader();
+        $output = MetadataTemplate::generateOutput('da',$this->getList());    
         break;
   
       // STUDY
@@ -130,6 +151,12 @@ class STDListForm extends FormBase {
     }
 
     // PUT FORM TOGETHER
+
+    $form['title'] = [
+      '#type' => 'item',
+      '#title' => t('<h3>Available <font color="DarkGreen">' . $class_name . '</font></h3>'),
+    ];
+
     $form['element_table'] = [
       '#type' => 'table',
       '#header' => $header,

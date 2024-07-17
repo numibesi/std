@@ -5,6 +5,7 @@ namespace Drupal\std\Form;
 use Drupal\Core\Form\FormBase;
 use Drupal\Core\Form\FormStateInterface;
 use Drupal\Core\Url;
+use Symfony\Component\HttpFoundation\RedirectResponse;
 use Drupal\rep\Utils;
 use Drupal\rep\Vocabulary\HASCO;
 
@@ -48,37 +49,39 @@ class EditStudyObjectCollectionForm extends FormBase {
     $studyObjectCollection = $api->parseObjectResponse($api->getUri($this->getStudyObjectCollectionUri()),'getUri');
     if ($studyObjectCollection == NULL) {
       \Drupal::messenger()->addError(t("Failed to retrieve Study Object Collection."));
-      $form_state->setRedirectUrl(Utils::selectBackUrl('studyobjectcollection'));
+      self::backUrl();
+      return;
     } else {
       $this->setStudyObjectCollection($studyObjectCollection);
+      //dpm($studyObjectCollection);
     }
 
     // RETRIEVE VCs FOR GIVEN STUDY
     $vcs = array();
-    $vcs_response = json_decode($api->virtualColumnsByStudy($this->getStudyObjectCollection()->study->uri));
+    $vcs_response = json_decode($api->virtualColumnsByStudy($this->getStudyObjectCollection()->isMemberOf->uri));
     if ($vcs_response != NULL && isset($vcs_response->body)) {
       $raw_vcs = $vcs_response->body;
       foreach ($raw_vcs as $raw_vc) {
-        $vcs[$raw_vc->uri] = $raw_vc->label;
+        $vcs[$raw_vc->uri] = Utils::fieldToAutocomplete($raw_vc->uri,$raw_vc->label);
       }
     }
 
     // RETRIEVE SOCs FOR GIVEN STUDY
     $socs = array();
     $socs[] = ' ';
-    $socs_response =  json_decode($api->studyObjectCollectionsByStudy($this->getStudyObjectCollection()->study->uri));
+    $socs_response =  json_decode($api->studyObjectCollectionsByStudy($this->getStudyObjectCollection()->isMemberOf->uri));
     if ($socs_response != NULL && isset($socs_response->body)) {
       $raw_socs = $socs_response->body;
       foreach ($raw_socs as $raw_soc) {
-        $socs[$raw_soc->uri] = $raw_soc->label;
+        $socs[$raw_soc->uri] = Utils::fieldToAutocomplete($raw_soc->uri,$raw_soc->label);
       }
     }
 
     $study = ' ';
-    if ($this->getStudyObjectCollection()->study != NULL &&
-        $this->getStudyObjectCollection()->study->uri != NULL &&
-        $this->getStudyObjectCollection()->study->label != NULL) {
-      $study = Utils::fieldToAutocomplete($this->getStudyObjectCollection()->study->uri,$this->getStudyObjectCollection()->study->label);
+    if ($this->getStudyObjectCollection()->isMemberOf != NULL &&
+        $this->getStudyObjectCollection()->isMemberOf->uri != NULL &&
+        $this->getStudyObjectCollection()->isMemberOf->label != NULL) {
+      $study = Utils::fieldToAutocomplete($this->getStudyObjectCollection()->isMemberOf->uri,$this->getStudyObjectCollection()->isMemberOf->label);
     }
 
     $form['soc_study'] = [
@@ -159,9 +162,7 @@ class EditStudyObjectCollectionForm extends FormBase {
     $button_name = $triggering_element['#name'];
 
     if ($button_name === 'back') {
-      $url = Url::fromRoute('std.manage_studyobjectcollection', 
-          ['studyuri' => base64_encode($this->getStudyObjectCollection()->study->uri)]);
-      $form_state->setRedirectUrl($url);
+      self::backUrl();
       return;
     } 
 
@@ -175,7 +176,7 @@ class EditStudyObjectCollectionForm extends FormBase {
     $studyObjectCollectionJSON = '{"uri":"'. $this->getStudyObjectCollection()->uri .'",'.
       '"typeUri":"'.HASCO::STUDY_OBJECT_COLLECTION.'",'.
       '"hascoTypeUri":"'.HASCO::STUDY_OBJECT_COLLECTION.'",'.
-      '"isMemberOf":"'.$studyUri.'",'.
+      '"isMemberOfUri":"'.$studyUri.'",'.
       '"virtualColumnUri":"'.$form_state->getValue('soc_virtualcolumn').'",'.
       '"label":"'.$form_state->getValue('soc_label').'",'.
       '"comment":"'.$form_state->getValue('soc_definition').'",'.
@@ -188,19 +189,24 @@ class EditStudyObjectCollectionForm extends FormBase {
       $api->studyObjectCollectionAdd($studyObjectCollectionJSON);
     
       \Drupal::messenger()->addMessage(t("Study Object Collection has been updated successfully."));
-      $url = Url::fromRoute('std.manage_studyobjectcollection', 
-          ['studyuri' => base64_encode($this->getStudyObjectCollection()->study->uri)]);
-      $form_state->setRedirectUrl($url);
+      self::backUrl();
       return;
 
     } catch(\Exception $e) {
       \Drupal::messenger()->addError(t("An error occurred while updating Study Object Collection: ".$e->getMessage()));
-      $url = Url::fromRoute('std.manage_studyobjectcollection', 
-          ['studyuri' => base64_encode($this->getStudyObjectCollection()->study->uri)]);
-      $form_state->setRedirectUrl($url);
+      self::backUrl();
       return;
     }
+  }
 
+  function backUrl() {
+    $uid = \Drupal::currentUser()->id();
+    $previousUrl = Utils::trackingGetPreviousUrl($uid, 'std.edit_studyobjectcollection');
+    if ($previousUrl) {
+      $response = new RedirectResponse($previousUrl);
+      $response->send();
+      return;
+    }
   }
 
 }

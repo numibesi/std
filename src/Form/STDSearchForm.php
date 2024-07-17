@@ -97,6 +97,9 @@ class STDSearchForm extends FormBase {
       '#required' => TRUE,
       '#options' => [
         'dsg' => $this->t('DSGs'),
+        'dd' => $this->t('DDs'),
+        'sdd' => $this->t('SDDs'),
+        'da' => $this->t('DAs'),
         'study' => $this->t('Studies'),
         'studyrole' => $this->t('Study Roles'),
         'virtualcolumn' => $this->t('Virtual Columns'),

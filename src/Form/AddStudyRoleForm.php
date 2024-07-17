@@ -4,6 +4,8 @@ namespace Drupal\std\Form;
 
 use Drupal\Core\Form\FormBase;
 use Drupal\Core\Form\FormStateInterface;
+use Drupal\Core\Url;
+use Symfony\Component\HttpFoundation\RedirectResponse;
 use Drupal\rep\Utils;
 use Drupal\rep\Vocabulary\HASCO;
 
@@ -16,33 +18,96 @@ class AddStudyRoleForm extends FormBase {
     return 'add_study_role_form';
   }
 
+  protected $studyUri;
+
+  protected $study;
+
+  public function getStudyUri() {
+    return $this->studyUri;
+  }
+
+  public function setStudyUri($studyUri) {
+    return $this->studyUri = $studyUri; 
+  }
+
+  public function getStudy() {
+    return $this->study;
+  }
+
+  public function setStudy($study) {
+    return $this->study = $study; 
+  }
+
   /**
    * {@inheritdoc}
    */
-  public function buildForm(array $form, FormStateInterface $form_state) {
-    $form['studyrole_study'] = [
-      '#type' => 'textfield',
-      '#title' => $this->t('Study'),
-      '#autocomplete_route_name' => 'std.study_autocomplete',
-    ];
+  public function buildForm(array $form, FormStateInterface $form_state, $studyuri = NULL, $fixstd = NULL) {
+
+    $api = \Drupal::service('rep.api_connector');
+
+    // HANDLE STUDYURI AND STUDY, IF ANY
+    if ($studyuri != NULL) {
+      if ($studyuri == 'none') {
+        $this->setStudyUri(NULL);
+      } else {
+        $studyuri_decoded = base64_decode($studyuri);
+        $this->setStudyUri($studyuri_decoded);
+        $study = $api->parseObjectResponse($api->getUri($this->getStudyUri()),'getUri');
+        if ($study == NULL) {
+          \Drupal::messenger()->addMessage(t("Failed to retrieve Study."));
+          self::backUrl();
+          return;
+        } else {
+          $this->setStudy($study);
+        }
+      }
+    }
+
+    $study = ' ';
+    if ($this->getStudy() != NULL &&
+        $this->getStudy()->uri != NULL &&
+        $this->getStudy()->label != NULL) {
+      $study = Utils::fieldToAutocomplete($this->getStudy()->uri,$this->getStudy()->label);
+    }
+
+    if ($fixstd == 'T') {
+      $form['studyrole_study'] = [
+        '#type' => 'textfield',
+        '#title' => $this->t('Study'),
+        '#default_value' => $study,
+        '#disabled' => TRUE,
+      ];
+    } else {
+      $form['studyrole_study'] = [
+        '#type' => 'textfield',
+        '#title' => $this->t('Study'),
+        '#default_value' => $study,
+        '#autocomplete_route_name' => 'std.study_autocomplete',
+      ];
+    }
+    
     $form['studyrole_name'] = [
       '#type' => 'textfield',
       '#title' => $this->t('Name'),
     ];
+
     $form['studyrole_description'] = [
       '#type' => 'textarea',
       '#title' => $this->t('Description'),
     ];
+
     $form['save_submit'] = [
       '#type' => 'submit',
       '#value' => $this->t('Save'),
       '#name' => 'save',
     ];
+
     $form['cancel_submit'] = [
       '#type' => 'submit',
       '#value' => $this->t('Cancel'),
       '#name' => 'back',
     ];
+
     $form['bottom_space'] = [
       '#type' => 'item',
       '#title' => t('<br><br>'),
@@ -75,7 +140,7 @@ class AddStudyRoleForm extends FormBase {
     $button_name = $triggering_element['#name'];
 
     if ($button_name === 'back') {
-      $form_state->setRedirectUrl(Utils::selectBackUrl('studyrole'));
+      self::backUrl();
       return;
     } 
 
@@ -91,7 +156,7 @@ class AddStudyRoleForm extends FormBase {
         '"typeUri":"'.HASCO::STUDY_ROLE.'",'.
         '"hascoTypeUri":"'.HASCO::STUDY_ROLE.'",'.
         '"label":"'.$form_state->getValue('studyrole_name').'",'.
-        '"isMemberOf":"'.$studyUri.'",'.
+        '"isMemberOfUri":"'.$studyUri.'",'.
         '"comment":"'.$form_state->getValue('studyrole_description').'",'.
         '"hasSIRManagerEmail":"'.$useremail.'"}';
 
@@ -101,15 +166,26 @@ class AddStudyRoleForm extends FormBase {
       if ($message != null) {
         \Drupal::messenger()->addMessage(t("Study Role has been added successfully."));
       }
-      $form_state->setRedirectUrl(Utils::selectBackUrl('studyrole'));
+      self::backUrl();
       return;
 
     } catch(\Exception $e) {
       \Drupal::messenger()->addMessage(t("An error occurred while adding a study role: ".$e->getMessage()));
-      $form_state->setRedirectUrl(Utils::selectBackUrl('studyrole'));
+      self::backUrl();
       return;
     }
 
   }
+
+  function backUrl() {
+    $uid = \Drupal::currentUser()->id();
+    $previousUrl = Utils::trackingGetPreviousUrl($uid, 'std.add_studyrole');
+    if ($previousUrl) {
+      $response = new RedirectResponse($previousUrl);
+      $response->send();
+      return;
+    }
+  }
+  
 
 }

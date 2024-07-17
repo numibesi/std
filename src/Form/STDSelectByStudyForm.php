@@ -5,6 +5,7 @@ namespace Drupal\std\Form;
 use Drupal\Core\Form\FormBase;
 use Drupal\Core\Form\FormStateInterface;
 use Drupal\Core\Url;
+use Symfony\Component\HttpFoundation\RedirectResponse;
 use Drupal\Component\Serialization\Json;
 use Drupal\file\Entity\File;
 use Drupal\rep\ListManagerEmailPageByStudy;
@@ -69,7 +70,7 @@ class STDSelectByStudyForm extends FormBase {
   /**
    * {@inheritdoc}
    */
-  public function buildForm(array $form, FormStateInterface $form_state, $studyuri=NULL, $elementtype=NULL, $page=NULL, $pagesize=NULL) {
+  public function buildForm(array $form, FormStateInterface $form_state, $studyuri = NULL, $elementtype = NULL, $page = NULL, $pagesize = NULL) {
 
     // GET MANAGER EMAIL
     $this->manager_email = \Drupal::currentUser()->getEmail();
@@ -83,7 +84,7 @@ class STDSelectByStudyForm extends FormBase {
     $study = $api->parseObjectResponse($api->getUri($decoded_studyuri),'getUri');
     if ($study == NULL) {
       \Drupal::messenger()->addMessage(t("Failed to retrieve Study."));
-      $form_state->setRedirectUrl(self::backManageStudy($decode_studyuri));
+      self::backUrl();
     } else {
       $this->setStudy($study);
     }
@@ -177,13 +178,11 @@ class STDSelectByStudyForm extends FormBase {
       '#type' => 'item',
       '#title' => $this->t('<h4>' . $this->plural_class_name . ' maintained by <font color="DarkGreen">' . $this->manager_name . ' (' . $this->manager_email . ')</font></h4>'),
     ];
-    if ($this->element_type != "studyobjectcollection") {
-      $form['add_element'] = [
-        '#type' => 'submit',
-        '#value' => $this->t('Add New ' . $this->single_class_name),
-        '#name' => 'add_element',
-      ];
-    }
+    $form['add_element'] = [
+      '#type' => 'submit',
+      '#value' => $this->t('Add New ' . $this->single_class_name),
+      '#name' => 'add_element',
+    ];
     $form['edit_selected_element'] = [
       '#type' => 'submit',
       '#value' => $this->t('Edit Selected ' . $this->single_class_name),
@@ -227,6 +226,8 @@ class STDSelectByStudyForm extends FormBase {
     return $form;
   }
 
+
+
   /**
    * {@inheritdoc}
    */   
@@ -234,7 +235,11 @@ class STDSelectByStudyForm extends FormBase {
     // RETRIEVE TRIGGERING BUTTON
     $triggering_element = $form_state->getTriggeringElement();
     $button_name = $triggering_element['#name'];
-  
+
+    // SET USER ID AND PREVIOUS URL FOR TRACKING STORE URLS
+    $uid = \Drupal::currentUser()->id();
+    $previousUrl = \Drupal::request()->getRequestUri();
+
     // RETRIEVE SELECTED ROWS, IF ANY
     $selected_rows = $form_state->getValue('element_table');
     $rows = [];
@@ -247,23 +252,66 @@ class STDSelectByStudyForm extends FormBase {
     // ADD ELEMENT
     if ($button_name === 'add_element') {
       if ($this->element_type == 'da') {
+        Utils::trackingStoreUrls($uid, $previousUrl, 'rep.add_mt');
         if ($this->getStudy() == NULL || $this->getStudy()->uri == NULL) {
-          $url = Url::fromRoute('rep.add_mt', ['elementtype' => $this->element_type, 'fixstd' => 'F', 'studyuri' => 'none']);
+          $url = Url::fromRoute('rep.add_mt', [
+            'elementtype' => $this->element_type,  
+            'studyuri' => 'none', 
+            'fixstd' => 'F',
+          ]);
         } else {
-          $url = Url::fromRoute('rep.add_mt', ['elementtype' => $this->element_type, 'fixstd' => 'T', 'studyuri' => base64_encode($this->getStudy()->uri)]);
+          $url = Url::fromRoute('rep.add_mt', [
+            'elementtype' => $this->element_type, 
+            'studyuri' => base64_encode($this->getStudy()->uri), 
+            'fixstd' => 'T',
+          ]);
         }
       }  
       if ($this->element_type == 'studyrole') {
-        $url = Url::fromRoute('std.add_studyrole');
+        Utils::trackingStoreUrls($uid, $previousUrl, 'std.add_studyrole');
+        if ($this->getStudy() == NULL || $this->getStudy()->uri == NULL) {
+          $url = Url::fromRoute('std.add_studyrole', [
+            'studyuri' => 'none', 
+            'fixstd' => 'F',
+          ]);
+        } else {
+          $url = Url::fromRoute('std.add_studyrole', [
+            'studyuri' => base64_encode($this->getStudy()->uri), 
+            'fixstd' => 'T',
+          ]);
+        }
       } 
       if ($this->element_type == 'studyobjectcollection') {
-        $url = Url::fromRoute('std.add_studyobjectcollection');
+        Utils::trackingStoreUrls($uid, $previousUrl, 'std.add_studyobjectcollection');
+        if ($this->getStudy() == NULL || $this->getStudy()->uri == NULL) {
+          $url = Url::fromRoute('std.add_studyobjectcollection', [
+            'studyuri' => 'none', 
+            'fixstd' => 'F',
+          ]);
+        } else {
+          $url = Url::fromRoute('std.add_studyobjectcollection', [
+            'studyuri' => base64_encode($this->getStudy()->uri), 
+            'fixstd' => 'T',
+          ]);
+        }
       } 
       if ($this->element_type == 'studyobject') {
+        Utils::trackingStoreUrls($uid, $previousUrl, 'std.add_studyobject');
         $url = Url::fromRoute('std.add_studyobject');
       } 
       if ($this->element_type == 'virtualcolumn') {
-        $url = Url::fromRoute('std.add_virtualcolumn');
+        Utils::trackingStoreUrls($uid, $previousUrl, 'std.add_virtualcolumn');
+        if ($this->getStudy() == NULL || $this->getStudy()->uri == NULL) {
+          $url = Url::fromRoute('std.add_virtualcolumn', [
+            'studyuri' => 'none', 
+            'fixstd' => 'F',
+          ]);
+        } else {
+          $url = Url::fromRoute('std.add_virtualcolumn', [
+            'studyuri' => base64_encode($this->getStudy()->uri), 
+            'fixstd' => 'T',
+          ]);
+        }
       } 
       $form_state->setRedirectUrl($url);
     }  
@@ -271,25 +319,44 @@ class STDSelectByStudyForm extends FormBase {
     // EDIT ELEMENT
     if ($button_name === 'edit_element') {
       if (sizeof($rows) < 1) {
-        \Drupal::messenger()->addMessage(t("Select the exact " . $this->single_class_name . " to be edited."));      
+        \Drupal::messenger()->addWarning(t("Select the exact " . $this->single_class_name . " to be edited."));      
       } else if ((sizeof($rows) > 1)) {
-        \Drupal::messenger()->addMessage(t("No more than one " . $this->single_class_name . " can be edited at once."));      
+        \Drupal::messenger()->addWarning(t("No more than one " . $this->single_class_name . " can be edited at once."));      
       } else {
         $first = array_shift($rows);
         if ($this->element_type == 'da') {
-          $url = Url::fromRoute('rep.edit_mt', ['elementtype' => $this->element_type, 'elementuri' => base64_encode($first)]);
+          Utils::trackingStoreUrls($uid, $previousUrl, 'rep.edit_mt');
+          $url = Url::fromRoute('rep.edit_mt', [
+            'elementtype' => $this->element_type, 
+            'elementuri' => base64_encode($first), 
+            'fixstd' => 'T',
+          ]);
         }
         if ($this->element_type == 'studyrole') {
-          $url = Url::fromRoute('std.edit_studyrole', ['studyroleuri' => base64_encode($first)]);
+          Utils::trackingStoreUrls($uid, $previousUrl, 'std.edit_studyrole');
+          $url = Url::fromRoute('std.edit_studyrole', [
+            'studyroleuri' => base64_encode($first),
+            'fixstd' => 'T',
+          ]);
         } 
         if ($this->element_type == 'studyobjectcollection') {
-          $url = Url::fromRoute('std.edit_studyobjectcollection', ['studyobjectcollectionuri' => base64_encode($first)]);
+          Utils::trackingStoreUrls($uid, $previousUrl, 'std.edit_studyobjectcollection');
+          $url = Url::fromRoute('std.edit_studyobjectcollection', [
+            'studyobjectcollectionuri' => base64_encode($first)
+          ]);
         } 
         if ($this->element_type == 'studyobject') {
-          $url = Url::fromRoute('std.edit_studyobject', ['studyobjecturi' => base64_encode($first)]);
+          Utils::trackingStoreUrls($uid, $previousUrl, 'std.edit_studyobject');
+          $url = Url::fromRoute('std.edit_studyobject', [
+            'studyobjecturi' => base64_encode($first)
+          ]);
         } 
         if ($this->element_type == 'virtualcolumn') {
-          $url = Url::fromRoute('std.edit_virtualcolumn', ['virtualcolumnuri' => base64_encode($first)]);
+          Utils::trackingStoreUrls($uid, $previousUrl, 'std.edit_virtualcolumn');
+          $url = Url::fromRoute('std.edit_virtualcolumn', [
+            'virtualcolumnuri' => base64_encode($first),
+            'fixstd' => 'T',
+          ]);
         } 
         $form_state->setRedirectUrl($url);
       } 
@@ -298,10 +365,28 @@ class STDSelectByStudyForm extends FormBase {
     // DELETE ELEMENT
     if ($button_name === 'delete_element') {
       if (sizeof($rows) <= 0) {
-        \Drupal::messenger()->addMessage(t("At least one " . $this->single_class_name . " needs to be selected to be deleted."));      
+        \Drupal::messenger()->addWarning(t("At least one " . $this->single_class_name . " needs to be selected to be deleted."));      
       } else {
         $api = \Drupal::service('rep.api_connector');
         foreach($rows as $uri) {
+          if ($this->element_type == 'da') {
+            $mt = $api->parseObjectResponse($api->getUri($uri),'getUri');
+            if ($mt != NULL && $mt->hasDataFile != NULL) {
+              // DELETE FILE
+              if (isset($mt->hasDataFile->id)) {
+                $file = File::load($mt->hasDataFile->id);
+                if ($file) {
+                  $file->delete();
+                  \Drupal::messenger()->addMessage(t("Deleted file with following ID: ".$mt->hasDataFile->id));      
+                }  
+              }
+              // DELETE DATAFILE
+              if (isset($mt->hasDataFile->uri)) {
+                $api->dataFileDel($mt->hasDataFile->uri);
+                \Drupal::messenger()->addMessage(t("Deleted DataFile with following URI: ".$mt->hasDataFile->uri));      
+              }
+            }
+          } 
           if ($this->element_type == 'studyrole') {
             $api->studyRoleDel($uri);
           } 
@@ -321,18 +406,19 @@ class STDSelectByStudyForm extends FormBase {
 
     // BACK TO MAIN PAGE
     if ($button_name === 'back') {
-      $form_state->setRedirectUrl(self::backManageStudy($this->getStudy()->uri));
+      self::backUrl();
     }  
   }
 
-  /**
-   * {@inheritdoc}
-   */   
-  public static function backManageStudy($studyuri) {
-    // TODO: go back to manage study
-    $url = Url::fromRoute('std.manage_study');
-    $url->setRouteParameter('studyuri', base64_encode($studyuri));
-    return $url;
+  function backUrl() {
+    $uid = \Drupal::currentUser()->id();
+    $previousUrl = Utils::trackingGetPreviousUrl($uid, 'std.select_element_bystudy');
+    if ($previousUrl) {
+      $response = new RedirectResponse($previousUrl);
+      $response->send();
+      return;
+    }
   }
+  
   
 }
