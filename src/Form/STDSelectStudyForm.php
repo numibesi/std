@@ -227,9 +227,6 @@ class STDSelectStudyForm extends FormBase {
     // RETRIEVE TRIGGERING BUTTON
     $triggering_element = $form_state->getTriggeringElement();
     $button_name = $triggering_element['#name'];
-    $destination = $triggering_element['#destination'];
-    $urivalue = $triggering_element['#urivalue'];
-    $drupal_selector = $triggering_element['#attributes']['data-drupal-selector'];
   
     // SET USER ID AND PREVIOUS URL FOR TRACKING STORE URLS
     $uid = \Drupal::currentUser()->id();
@@ -238,9 +235,11 @@ class STDSelectStudyForm extends FormBase {
     // RETRIEVE SELECTED ROWS, IF ANY
     $selected_rows = $form_state->getValue('element_table');
     $rows = [];
-    foreach ($selected_rows as $index => $selected) {
-      if ($selected) {
-        $rows[$index] = $index;
+    if ($selected_rows != NULL) {
+      foreach ($selected_rows as $index => $selected) {
+        if ($selected) {
+          $rows[$index] = $index;
+        }
       }
     }
 
@@ -338,7 +337,7 @@ class STDSelectStudyForm extends FormBase {
           //  $api->studyObjectCollectionDel($uri);
           //} 
           //if ($this->element_type == 'studyobject') {
-          //  $api->studyObjectDel($uri);
+          //  $api->Del($uri);
           //} 
           //if ($this->element_type == 'virtualcolumn') {
           //  $api->virtualColumnDel($uri);

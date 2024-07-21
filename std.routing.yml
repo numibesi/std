@@ -46,7 +46,17 @@ std.select_element_bystudy:
     _custom_access_check: 'TRUE'    
   options:
     no_cache: 'TRUE'
-
+    
+std.select_element_bysoc:
+  path: 'std/selectbysoc/{socuri}/{elementtype}/{page}/{pagesize}'
+  defaults:
+    _form: '\Drupal\std\Form\ManageStudyObjectForm'
+  requirements:
+    _permission: 'access content'
+    _custom_access_check: 'TRUE'    
+  options:
+    no_cache: 'TRUE'
+    
 std.property_element:
   path: 'std/property/{elementuri}/{property}/{elementtype}/{page}/{pagesize}'
   defaults:
@@ -186,11 +196,11 @@ std.edit_studyobjectcollection:
 
 # Study Object CRUD options
 
-std.manage_studyobject:
-  path: 'std/manage/studyobjects/{studyobjectcollectionuri}'
+std.view_studyobject:
+  path: 'std/view/studyobjects/{studyobjectcollectionuri}'
   defaults:
-    _form: '\Drupal\std\Form\ManageStudyObjectForm'
-    _title: 'Manage Study Objects'    
+    _form: '\Drupal\std\Form\ViewStudyObjectForm'
+    _title: 'View Study Objects'    
   requirements:
     _permission: 'access content'
     _custom_access_check: 'TRUE'    

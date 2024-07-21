@@ -6,15 +6,48 @@ use Drupal\Core\Form\FormBase;
 use Drupal\Core\Form\FormBuilder;
 use Drupal\Core\Form\FormStateInterface;
 use Drupal\Core\Url;
+use Symfony\Component\HttpFoundation\RedirectResponse;
 use Drupal\rep\Utils;
+use Drupal\rep\Entity\StudyObject;
+use Drupal\rep\ListManagerEmailPageBySOC;
 use Drupal\rep\Vocabulary\VSTOI;
 use Drupal\rep\Vocabulary\REPGUI;
 use Drupal\Component\Serialization\Json;
-use Symfony\Component\HttpFoundation\RedirectResponse;
 
 class ManageStudyObjectForm extends FormBase {
 
+  public $element_type;
+
+  public $manager_email;
+
+  public $manager_name;
+
+  public $single_class_name;
+
+  public $plural_class_name;
+
+  protected $list;
+
+  protected $list_size;
+
   protected $studyObjectCollection;
+
+  public function getList() {
+    return $this->list;
+  }
+
+  public function setList($list) {
+    return $this->list = $list; 
+  }
+
+  public function getListSize() {
+    return $this->list_size;
+  }
+
+  public function setListSize($list_size) {
+    return $this->list_size = $list_size; 
+  }
+
 
   public function getStudyObjectCollection() {
     return $this->studyObjectCollection;
@@ -34,69 +67,71 @@ class ManageStudyObjectForm extends FormBase {
   /**
    * {@inheritdoc}
    */
-  public function buildForm(array $form, FormStateInterface $form_state, $studyobjectcollectionuri = NULL) {
+  public function buildForm(array $form, FormStateInterface $form_state, $socuri = NULL, $elementtype = NULL, $page = NULL, $pagesize = NULL) {
 
-    # SET CONTEXT
-    $uri=base64_decode($studyobjectcollectionuri);
-
-    # ROOT URL
-    $root_url = \Drupal::request()->getBaseUrl();
-
-    $uemail = \Drupal::currentUser()->getEmail();
+    // GET MANAGER EMAIL
+    $this->manager_email = \Drupal::currentUser()->getEmail();
     $uid = \Drupal::currentUser()->id();
     $user = \Drupal\user\Entity\User::load($uid);
-    $username = $user->name->value;
-
-    // RETRIEVE STUDY OBJECT COLLECTION BY URI
-    $api = \Drupal::service('rep.api_connector');
-    $studyObjectCollection = $api->parseObjectResponse($api->getUri($uri),'getUri');
-    $this->setStudyObjectCollection($studyObjectCollection);
+    $this->manager_name = $user->name->value;
     
-    // RETRIEVE STUDY OBJECT BY STUDY OBJECT COLLECTION
-    $sos = $api->parseObjectResponse($api->studyObjectsBySOCWithPage($this->getStudyObjectCollection()->uri,12,0),'studyObjectsBySOCWithPage');
+    // GET SOC
+    $api = \Drupal::service('rep.api_connector');
+    $decoded_socuri = base64_decode($socuri);
+    $soc = $api->parseObjectResponse($api->getUri($decoded_socuri),'getUri');
+    if ($soc == NULL) {
+      \Drupal::messenger()->addMessage(t("Failed to retrieve Study Object Collection."));
+      self::backUrl();
+    } else {
+      $this->setStudyObjectCollection($soc);
+    }
 
-    //dpm($sos);
-
-    # BUILD HEADER
-
-    $header = [
-      'so_uri' => t('URI'),
-      'so_original_id' => t('Original Id'),
-      'so_entity' => t('Entity Type'),
-    ];
-
-    # POPULATE DATA
-
-    $output = array();
-    $uriType = array();
-    if ($sos != NULL) {
-      foreach ($sos as $so) {
-
-        $nsUri = Utils::namespaceUri($uri);
-
-        $originalId = ' ';
-        if ($so->originalId != NULL) {
-          $originalId = $so->originalId;
-        }
-
-        $typeLabel = ' ';
-        if ($so->typeLabel != NULL) {
-          $typeLabel = $so->typeLabel;
-        }
-
-        $output[$so->uri] = [
-          'so_uri' => t('<a href="'.$root_url.REPGUI::DESCRIBE_PAGE.base64_encode($uri).'">'.$nsUri.'</a>'),     
-          'so_original_id' => $so->originalId,     
-          'so_entity' => $so->typeLabel,     
-        ];
+    // GET TOTAL NUMBER OF ELEMENTS AND TOTAL NUMBER OF PAGES
+    $this->element_type = $elementtype;
+    $this->setListSize(-1);
+    if ($this->element_type != NULL) {
+      $this->setListSize(ListManagerEmailPageBySOC::total($this->getStudyObjectCollection()->uri, $this->element_type, $this->manager_email));
+    }
+    if (gettype($this->list_size) == 'string') {
+      $total_pages = "0";
+    } else { 
+      if ($this->list_size % $pagesize == 0) {
+        $total_pages = $this->list_size / $pagesize;
+      } else {
+        $total_pages = floor($this->list_size / $pagesize) + 1;
       }
     }
 
+    // CREATE LINK FOR NEXT PAGE AND PREVIOUS PAGE
+    if ($page < $total_pages) {
+      $next_page = $page + 1;
+      $next_page_link = ListManagerEmailPageBySOC::link($this->getStudyObjectCollection()->uri, $this->element_type, $next_page, $pagesize);
+    } else {
+      $next_page_link = '';
+    }
+    if ($page > 1) {
+      $previous_page = $page - 1;
+      $previous_page_link = ListManagerEmailPageBySOC::link($this->getStudyObjectCollection()->uri, $this->element_type, $previous_page, $pagesize);
+    } else {
+      $previous_page_link = '';
+    }
+
+    // RETRIEVE ELEMENTS
+    $this->setList(ListManagerEmailPageBySOC::exec($this->getStudyObjectCollection()->uri, $this->element_type, $this->manager_email, $page, $pagesize));
+
+    //dpm($this->element_type);
+    //dpm($this->getList());
+
+    $this->single_class_name = "Study Object";
+    $this->plural_class_name = "Study Objects";
+    $header = StudyObject::generateHeader();
+    $output = StudyObject::generateOutput($this->getList());    
+    
     # PUT FORM TOGETHER
 
     $form['scope'] = [
       '#type' => 'item',
-      '#title' => t('<h3>Study: <font color="DarkGreen">' . $this->getStudyObjectCollection()->study->label . '</font></h3>'),
+      '#title' => t('<h3>Study: <font color="DarkGreen">' . $this->getStudyObjectCollection()->isMemberOf->label . '</font></h3>'),
     ];
     $form['subscope'] = [
       '#type' => 'item',
@@ -104,7 +139,7 @@ class ManageStudyObjectForm extends FormBase {
     ];
     $form['subtitle'] = [
       '#type' => 'item',
-      '#title' => t('<h4>Managed by: <font color="DarkGreen">' . $username . ' (' . $uemail . ')</font></h4>'),
+      '#title' => t('<h4>Managed by: <font color="DarkGreen">' . $this->manager_name . ' (' . $this->manager_email . ')</font></h4>'),
     ];
     if ($this->getStudyObjectCollection() != NULL) {
       $form['add_so'] = [
@@ -120,10 +155,11 @@ class ManageStudyObjectForm extends FormBase {
     ];
     $form['delete_so'] = [
       '#type' => 'submit',
-      '#value' => $this->t('Delete Selected'),
+      '#value' => $this->t('Delete Selected Study Objects'),
       '#name' => 'delete_sos',    
       '#attributes' => ['onclick' => 'if(!confirm("Really Delete?")){return false;}'],
     ];
+
     $form['so_table'] = [
       '#type' => 'tableselect',
       '#header' => $header,
@@ -131,6 +167,19 @@ class ManageStudyObjectForm extends FormBase {
       '#js_select' => FALSE,
       '#empty' => t('No response options found'),
     ];
+    $form['pager'] = [
+      '#theme' => 'list-page',
+      '#items' => [
+          'page' => strval($page),
+          'first' => ListManagerEmailPageBySOC::link($this->getStudyObjectCollection()->uri, $this->element_type, 1, $pagesize),
+          'last' => ListManagerEmailPageBySOC::link($this->getStudyObjectCollection()->uri, $this->element_type, $total_pages, $pagesize),
+          'previous' => $previous_page_link,
+          'next' => $next_page_link,
+          'last_page' => strval($total_pages),
+          'links' => null,
+          'title' => ' ',
+      ],
+    ];    
     $form['submit'] = [
       '#type' => 'submit',
       '#value' => $this->t('Back to Study Object Collections'),
@@ -172,14 +221,20 @@ class ManageStudyObjectForm extends FormBase {
       }
     }
 
-    // ADD SOC
+    // BACK
+    if ($button_name === 'back') {
+      self::backUrl();
+      return;
+    }
+
+    // ADD STUDY OBJECT
     if ($button_name === 'add_so') {
       $url = Url::fromRoute('std.add_studyobject');
       $url->setRouteParameter('studyobjectcollectionuri', base64_encode($this->getStudyObjectCollection()->uri));
       $form_state->setRedirectUrl($url);
     }
 
-    // EDIT SOC
+    // EDIT STUDY OBJECT
     if ($button_name === 'edit_so') {
       if (sizeof($rows) < 1) {
         \Drupal::messenger()->addWarning(t("Select a Study Object to be edited."));      
@@ -194,10 +249,10 @@ class ManageStudyObjectForm extends FormBase {
       return;
     }
 
-    // DELETE SOC
-    if ($button_name === 'delete_so') {
+    // DELETE STUDY OBJECT
+    if ($button_name === 'delete_sos') {
       if (sizeof($rows) < 1) {
-        \Drupal::messenger()->addMessage(t("Select Study Objects to be deleted."));
+        \Drupal::messenger()->addWarning(t("Select Study Objects to be deleted."));
         return;      
       } else {
         $api = \Drupal::service('rep.api_connector');
@@ -205,29 +260,27 @@ class ManageStudyObjectForm extends FormBase {
         foreach($rows as $shortUri) {
           $uri = Utils::plainUri($shortUri);
           try {
-            $api->studyObjectDel($uri);
+            $api->elementDel('studyobject',$uri);
           } catch(\Exception $e) {
             \Drupal::messenger()->addError(t("An error occurred while deleting a Study Object: ".$e->getMessage()));
-            $url = Url::fromRoute('std.manage_studyobjectcollection', ['studyuri' => base64_encode($this->getStudyObjectCollection()->study->uri)]);
-            $form_state->setRedirectUrl($url);
+            self::backUrl();
             return;
           }    
         }
-        \Drupal::messenger()->addMessage(t("SOC(s) has been deleted successfully."));
-        $url = Url::fromRoute('std.manage_studyobjectcollection');
-        $url->setRouteParameter('studyuri', base64_encode($this->getStudyObjectCollection()->study->uri));
-        $form_state->setRedirectUrl($url);  
-        return;
+        \Drupal::messenger()->addMessage(t("Study object(s) has been deleted successfully."));
       } 
     }
 
-    // BACK TO MAIN PAGE
-    if ($button_name === 'back') {
-      $url = Url::fromRoute('std.manage_studyobjectcollection');
-      $url->setRouteParameter('studyuri', base64_encode($this->getStudyObjectCollection()->study->uri));
-      $form_state->setRedirectUrl($url);  
-      return;
-    }  
   }
-  
-}
+
+  function backUrl() {
+    $uid = \Drupal::currentUser()->id();
+    $previousUrl = Utils::trackingGetPreviousUrl($uid, 'std.select_element_bysoc');
+    if ($previousUrl) {
+      $response = new RedirectResponse($previousUrl);
+      $response->send();
+      return;
+    }
+  }
+
+}  

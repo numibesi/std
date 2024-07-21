@@ -180,19 +180,26 @@ class STDSelectByStudyForm extends FormBase {
     ];
     $form['add_element'] = [
       '#type' => 'submit',
-      '#value' => $this->t('Add New ' . $this->single_class_name),
+      '#value' => $this->t('Add new ' . $this->single_class_name),
       '#name' => 'add_element',
     ];
     $form['edit_selected_element'] = [
       '#type' => 'submit',
-      '#value' => $this->t('Edit Selected ' . $this->single_class_name),
+      '#value' => $this->t('Edit selected ' . $this->single_class_name),
       '#name' => 'edit_element',
     ];
     $form['delete_selected_element'] = [
       '#type' => 'submit',
-      '#value' => $this->t('Delete Selected ' . $this->plural_class_name),
+      '#value' => $this->t('Delete selected ' . $this->plural_class_name),
       '#name' => 'delete_element',
     ];
+    if ($this->element_type == 'studyobjectcollection') {
+      $form['manage_study_objects'] = [
+        '#type' => 'submit',
+        '#value' => $this->t('Manage objects of selected Study Object Collection'),
+        '#name' => 'manage_studyobject',
+      ];
+    }
     $form['element_table'] = [
       '#type' => 'tableselect',
       '#header' => $header,
@@ -225,8 +232,6 @@ class STDSelectByStudyForm extends FormBase {
  
     return $form;
   }
-
-
 
   /**
    * {@inheritdoc}
@@ -394,7 +399,7 @@ class STDSelectByStudyForm extends FormBase {
             $api->studyObjectCollectionDel($uri);
           } 
           if ($this->element_type == 'studyobject') {
-            $api->studyObjectDel($uri);
+            $api->elementDel('studyobject',$uri);
           } 
           if ($this->element_type == 'virtualcolumn') {
             $api->virtualColumnDel($uri);
@@ -403,6 +408,25 @@ class STDSelectByStudyForm extends FormBase {
         \Drupal::messenger()->addMessage(t("Selected " . $this->plural_class_name . " has/have been deleted successfully."));      
       }
     }  
+
+    // MANAGE STUDY OBJECTS
+    if ($button_name === 'manage_studyobject') {
+      if (sizeof($rows) < 1) {
+        \Drupal::messenger()->addWarning(t("Select the exact " . $this->single_class_name . "'s objects to be managed."));      
+      } else if ((sizeof($rows) > 1)) {
+        \Drupal::messenger()->addWarning(t("Objects from no more than one " . $this->single_class_name . " can be edited at once."));      
+      } else {
+        $first = array_shift($rows);
+        Utils::trackingStoreUrls($uid, $previousUrl, 'std.select_element_bysoc');
+        $url = Url::fromRoute('std.select_element_bysoc', [
+          'socuri' => base64_encode($first),
+          'elementtype' => 'studyobject',
+          'page' => '0',
+          'pagesize' => '12',
+        ]);
+        $form_state->setRedirectUrl($url);
+      } 
+    }
 
     // BACK TO MAIN PAGE
     if ($button_name === 'back') {

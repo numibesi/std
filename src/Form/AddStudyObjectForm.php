@@ -47,12 +47,12 @@ class AddStudyObjectForm extends FormBase {
     
     $study = ' ';
     if ($this->getStudyObjectCollection() != NULL &&
-        $this->getStudyObjectCollection()->study != NULL &&
-        $this->getStudyObjectCollection()->study->uri != NULL &&
-        $this->getStudyObjectCollection()->study->label != NULL) {
+        $this->getStudyObjectCollection()->isMemberOf != NULL &&
+        $this->getStudyObjectCollection()->isMemberOf->uri != NULL &&
+        $this->getStudyObjectCollection()->isMemberOf->label != NULL) {
       $study = Utils::fieldToAutocomplete(
-        $this->getStudyObjectCollection()->study->uri,
-        $this->getStudyObjectCollection()->study->label);
+        $this->getStudyObjectCollection()->isMemberOf->uri,
+        $this->getStudyObjectCollection()->isMemberOf->label);
     }
 
     $soc = ' ';
@@ -80,11 +80,18 @@ class AddStudyObjectForm extends FormBase {
       '#type' => 'textfield',
       '#title' => $this->t('Original ID (required)'),
     ];
-    $form['studyobject_entity'] = [
-      '#type' => 'textfield',
-      '#title' => $this->t('Entity (required)'),
-      '#autocomplete_route_name' => 'sem.semanticvariable_entity_autocomplete',
-    ];
+    if (\Drupal::moduleHandler()->moduleExists('sem')) {
+      $form['studyobject_entity'] = [
+        '#type' => 'textfield',
+        '#title' => $this->t('Entity (required)'),
+        '#autocomplete_route_name' => 'sem.semanticvariable_entity_autocomplete',
+      ];
+    } else {
+      $form['studyobject_entity'] = [
+        '#type' => 'textfield',
+        '#title' => $this->t('Entity (required)'),
+      ];
+    }
     $form['studyobject_domainscope_object'] = [
       '#type' => 'textfield',
       '#title' => $this->t("Domain Scope's Object (if required)"),
@@ -143,15 +150,16 @@ class AddStudyObjectForm extends FormBase {
     $button_name = $triggering_element['#name'];
 
     if ($button_name === 'back') {
-      $url = Url::fromRoute('std.manage_studyobject', ['studyobjectcollectionuri' => base64_encode($this->getStudyObjectCollection()->uri)]);
-      $form_state->setRedirectUrl($url);
+      self::backurl($this->getStudyObjectCollection()->uri);
       return;
     } 
 
     $useremail = \Drupal::currentUser()->getEmail();
 
     $entityUri = NULL;
-    if ($form_state->getValue('studyobject_entity') != NULL && $form_state->getValue('studyobject_entity') != '') {
+    if ($form_state->getValue('studyobject_entity') == NULL || $form_state->getValue('studyobject_entity') == '') {
+      $entityUri = Utils::uriFromAutocomplete(HASCO::STUDY_OBJECT);
+    } else {
       $entityUri = Utils::uriFromAutocomplete($form_state->getValue('studyobject_entity'));
     } 
 
@@ -164,7 +172,7 @@ class AddStudyObjectForm extends FormBase {
     $studyObjectJSON = '{"uri":"'. $newStudyObjectUri .'",'.
         '"typeUri":"'.$entityUri.'",'.
         '"hascoTypeUri":"'.HASCO::STUDY_OBJECT.'",'.
-        '"isMemberOf":"'.$socUri.'",'.
+        '"isMemberOfUri":"'.$socUri.'",'.
         '"label":"'.$form_state->getValue('studyobject_original_id').'",'.
         '"originalId":"'.$form_state->getValue('studyobject_original_id').'",'.
         '"comment":"'.$form_state->getValue('studyobject_description').'",'.
@@ -172,21 +180,30 @@ class AddStudyObjectForm extends FormBase {
 
     try {
       $api = \Drupal::service('rep.api_connector');
-      $message = $api->parseObjectResponse($api->studyObjectAdd($studyObjectJSON),'studyObjectAdd');
+      $message = $api->parseObjectResponse($api->elementAdd('studyobject',$studyObjectJSON),'elementAdd');
       if ($message != null) {
         \Drupal::messenger()->addMessage(t("Study Object has been added successfully."));
       } else {
         \Drupal::messenger()->addError(t("Study Object failed to be added."));
       }
-      $url = Url::fromRoute('std.manage_studyobject', ['studyobjectcollectionuri' => base64_encode($this->getStudyObjectCollection()->uri)]);
-      $form_state->setRedirectUrl($url);
+      self::backurl($this->getStudyObjectCollection()->uri);
       return;
     } catch(\Exception $e) {
       \Drupal::messenger()->addError(t("An error occurred while adding a Study Object: ".$e->getMessage()));
-      $url = Url::fromRoute('std.manage_studyobject', ['studyobjectcollectionuri' => base64_encode($this->getStudyObjectCollection()->uri)]);
-      $form_state->setRedirectUrl($url);
+      self::backurl($this->getStudyObjectCollection()->uri);
       return;
     }
+  }
+
+  function backUrl($uri) {
+    $url = Url::fromRoute('std.select_element_bysoc', [
+      'socuri' => base64_encode($uri),
+      'elementtype' => 'studyobject',
+      'page' => '0',
+      'pagesize' => '12',
+    ]);
+    $form_state->setRedirectUrl($url);
+    return;
   }
 
 }
