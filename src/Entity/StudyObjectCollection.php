@@ -15,6 +15,7 @@ class StudyObjectCollection {
       'soc_reference' => t('Reference'),
       'soc_label' => t('Label'),
       'soc_grounding_label' => t('Grounding Label'),
+      'soc_num_objects' => t('# Objects'),
     ];
   
   }
@@ -58,6 +59,7 @@ class StudyObjectCollection {
           'soc_reference' => $socreference,     
           'soc_label' => $element->label,     
           'soc_grounding_label' => $groundingLabel,
+          'soc_num_objects' => $element->numOfObjects,
       ];
     }
     return $output;

@@ -39,6 +39,8 @@ class STDSelectByStudyForm extends FormBase {
 
   public $plural_class_name;
 
+  protected $mode;
+
   protected $list;
 
   protected $list_size;
@@ -49,6 +51,14 @@ class STDSelectByStudyForm extends FormBase {
 
   public function setStudy($study) {
     return $this->study = $study; 
+  }
+
+  public function getMode() {
+    return $this->mode;
+  }
+
+  public function setMode($mode) {
+    return $this->mode = $mode; 
   }
 
   public function getList() {
@@ -70,7 +80,7 @@ class STDSelectByStudyForm extends FormBase {
   /**
    * {@inheritdoc}
    */
-  public function buildForm(array $form, FormStateInterface $form_state, $studyuri = NULL, $elementtype = NULL, $page = NULL, $pagesize = NULL) {
+  public function buildForm(array $form, FormStateInterface $form_state, $studyuri = NULL, $elementtype = NULL, $mode = NULL, $page = NULL, $pagesize = NULL) {
 
     // GET MANAGER EMAIL
     $this->manager_email = \Drupal::currentUser()->getEmail();
@@ -78,6 +88,9 @@ class STDSelectByStudyForm extends FormBase {
     $user = \Drupal\user\Entity\User::load($uid);
     $this->manager_name = $user->name->value;
     
+    // GET MODE
+    $this->mode = $mode;
+
     // GET STUDY
     $api = \Drupal::service('rep.api_connector');
     $decoded_studyuri = base64_decode($studyuri);
@@ -134,7 +147,11 @@ class STDSelectByStudyForm extends FormBase {
         $this->single_class_name = "DA";
         $this->plural_class_name = "DAs";
         $header = MetadataTemplate::generateHeader();
-        $output = MetadataTemplate::generateOutput('da',$this->getList());    
+        if ($this->getMode() == 'table') {
+          $output = MetadataTemplate::generateOutput('da',$this->getList());    
+        } else {
+          $output = MetadataTemplate::generateOutputAsCards('da',$this->getList());    
+        }
         break;
       case "studyrole":
         $this->single_class_name = "Study Role";
@@ -183,30 +200,64 @@ class STDSelectByStudyForm extends FormBase {
       '#value' => $this->t('Add new ' . $this->single_class_name),
       '#name' => 'add_element',
     ];
-    $form['edit_selected_element'] = [
-      '#type' => 'submit',
-      '#value' => $this->t('Edit selected ' . $this->single_class_name),
-      '#name' => 'edit_element',
-    ];
-    $form['delete_selected_element'] = [
-      '#type' => 'submit',
-      '#value' => $this->t('Delete selected ' . $this->plural_class_name),
-      '#name' => 'delete_element',
-    ];
-    if ($this->element_type == 'studyobjectcollection') {
-      $form['manage_study_objects'] = [
+    if ($this->getMode() == 'table') {
+      $form['edit_selected_element'] = [
         '#type' => 'submit',
-        '#value' => $this->t('Manage objects of selected Study Object Collection'),
-        '#name' => 'manage_studyobject',
+        '#value' => $this->t('Edit selected ' . $this->single_class_name),
+        '#name' => 'edit_element',
+      ];
+      $form['delete_selected_element'] = [
+        '#type' => 'submit',
+        '#value' => $this->t('Delete selected ' . $this->plural_class_name),
+        '#name' => 'delete_element',
+        '#attributes' => ['onclick' => 'if(!confirm("Really Delete?")){return false;}'],
+      ];
+      if ($this->element_type == 'studyobjectcollection') {
+        $form['manage_study_objects'] = [
+          '#type' => 'submit',
+          '#value' => $this->t('Manage objects of selected Study Object Collection'),
+          '#name' => 'manage_studyobject',
+        ];
+      }
+    } else {
+      $form['space_top'] = [
+        '#type' => 'item',
+        '#value' => $this->t('<br><br>'),
       ];
     }
-    $form['element_table'] = [
-      '#type' => 'tableselect',
-      '#header' => $header,
-      '#options' => $output,
-      '#js_select' => FALSE,
-      '#empty' => t('No ' . $this->plural_class_name . ' found'),
-    ];
+
+    if ($this->element_type == 'da' && $this->getMode() == 'card') {
+
+      // Loop through $output and creates two cards per row
+      $index = 0;
+      foreach (array_chunk($output, 2, true) as $row) {
+          $index++;
+          $form['row_' . $index] = [
+              '#type' => 'container',
+              '#attributes' => [
+                  'class' => ['row', 'mb-3'],
+              ],
+          ];
+          $indexCard = 0;
+          foreach ($row as $uri => $card) {
+              $indexCard++;
+              $form['row_' . $index]['element_' . $indexCard] = $card;     
+          }
+      }
+
+    } else {
+
+      // ADD TABLE
+      $form['element_table'] = [
+        '#type' => 'tableselect',
+        '#header' => $header,
+        '#options' => $output,
+        '#js_select' => FALSE,
+        '#empty' => t('No ' . $this->plural_class_name . ' found'),
+      ];
+
+    }
+
     $form['pager'] = [
       '#theme' => 'list-page',
       '#items' => [
@@ -220,12 +271,23 @@ class STDSelectByStudyForm extends FormBase {
         'title' => ' ',
       ],
     ];
+
+    if ($this->element_type == 'da') {
+      $form['ingestion_note'] = [
+        '#type' => 'markup',
+        '#markup' => 
+          $this->t('<b>Note 1</b>: "Ingestion" is the process of moving the content of a file inside the repository\'s knowlegde graph. <br>' .
+                  '<b>Note 2</b>: A DA can only be ingested if it is associated with an SDD, and the SDD itself needs ingested. <br><br>'),
+      ];
+    }
+
     $form['submit'] = [
       '#type' => 'submit',
       '#value' => $this->t('Back to Manage Study'),
       '#name' => 'back',
     ];
-    $form['space'] = [
+
+    $form['space_bottom'] = [
       '#type' => 'item',
       '#value' => $this->t('<br><br><br>'),
     ];
@@ -248,11 +310,18 @@ class STDSelectByStudyForm extends FormBase {
     // RETRIEVE SELECTED ROWS, IF ANY
     $selected_rows = $form_state->getValue('element_table');
     $rows = [];
-    foreach ($selected_rows as $index => $selected) {
-      if ($selected) {
-        $rows[$index] = $index;
+    if ($this->getMode() == 'table') {
+      foreach ($selected_rows as $index => $selected) {
+        if ($selected) {
+          $rows[$index] = $index;
+        }
       }
     }
+
+    // BACK TO MAIN PAGE
+    if ($button_name === 'back') {
+      self::backUrl();
+    }  
 
     // ADD ELEMENT
     if ($button_name === 'add_element') {
@@ -329,14 +398,14 @@ class STDSelectByStudyForm extends FormBase {
         \Drupal::messenger()->addWarning(t("No more than one " . $this->single_class_name . " can be edited at once."));      
       } else {
         $first = array_shift($rows);
-        if ($this->element_type == 'da') {
-          Utils::trackingStoreUrls($uid, $previousUrl, 'rep.edit_mt');
-          $url = Url::fromRoute('rep.edit_mt', [
-            'elementtype' => $this->element_type, 
-            'elementuri' => base64_encode($first), 
-            'fixstd' => 'T',
-          ]);
-        }
+        //if ($this->element_type == 'da') {
+        //  Utils::trackingStoreUrls($uid, $previousUrl, 'rep.edit_mt');
+        //  $url = Url::fromRoute('rep.edit_mt', [
+        //    'elementtype' => $this->element_type, 
+        //    'elementuri' => base64_encode($first), 
+        //    'fixstd' => 'T',
+        //  ]);
+        //}
         if ($this->element_type == 'studyrole') {
           Utils::trackingStoreUrls($uid, $previousUrl, 'std.edit_studyrole');
           $url = Url::fromRoute('std.edit_studyrole', [
@@ -374,24 +443,24 @@ class STDSelectByStudyForm extends FormBase {
       } else {
         $api = \Drupal::service('rep.api_connector');
         foreach($rows as $uri) {
-          if ($this->element_type == 'da') {
-            $mt = $api->parseObjectResponse($api->getUri($uri),'getUri');
-            if ($mt != NULL && $mt->hasDataFile != NULL) {
-              // DELETE FILE
-              if (isset($mt->hasDataFile->id)) {
-                $file = File::load($mt->hasDataFile->id);
-                if ($file) {
-                  $file->delete();
-                  \Drupal::messenger()->addMessage(t("Deleted file with following ID: ".$mt->hasDataFile->id));      
-                }  
-              }
-              // DELETE DATAFILE
-              if (isset($mt->hasDataFile->uri)) {
-                $api->dataFileDel($mt->hasDataFile->uri);
-                \Drupal::messenger()->addMessage(t("Deleted DataFile with following URI: ".$mt->hasDataFile->uri));      
-              }
-            }
-          } 
+          //if ($this->element_type == 'da') {
+          //  $mt = $api->parseObjectResponse($api->getUri($uri),'getUri');
+          //  if ($mt != NULL && $mt->hasDataFile != NULL) {
+          //    // DELETE FILE
+          //    if (isset($mt->hasDataFile->id)) {
+          //      $file = File::load($mt->hasDataFile->id);
+          //      if ($file) {
+          //        $file->delete();
+          //        \Drupal::messenger()->addMessage(t("Deleted file with following ID: ".$mt->hasDataFile->id));      
+          //      }  
+          //    }
+          //    // DELETE DATAFILE
+          //    if (isset($mt->hasDataFile->uri)) {
+          //      $api->dataFileDel($mt->hasDataFile->uri);
+          //      \Drupal::messenger()->addMessage(t("Deleted DataFile with following URI: ".$mt->hasDataFile->uri));      
+          //    }
+          //  }
+          //} 
           if ($this->element_type == 'studyrole') {
             $api->studyRoleDel($uri);
           } 
@@ -421,17 +490,13 @@ class STDSelectByStudyForm extends FormBase {
         $url = Url::fromRoute('std.select_element_bysoc', [
           'socuri' => base64_encode($first),
           'elementtype' => 'studyobject',
-          'page' => '0',
+          'page' => '1',
           'pagesize' => '12',
         ]);
         $form_state->setRedirectUrl($url);
       } 
     }
 
-    // BACK TO MAIN PAGE
-    if ($button_name === 'back') {
-      self::backUrl();
-    }  
   }
 
   function backUrl() {

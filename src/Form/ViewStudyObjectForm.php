@@ -106,7 +106,7 @@ class ViewStudyObjectForm extends FormBase {
     ];
     $form['submit'] = [
       '#type' => 'submit',
-      '#value' => $this->t('Back to Study Object Collections'),
+      '#value' => $this->t('Back'),
       '#name' => 'back',
     ];
     $form['bottom_space'] = [
@@ -134,8 +134,7 @@ class ViewStudyObjectForm extends FormBase {
 
     // BACK TO MAIN PAGE
     if ($button_name === 'back') {
-      $url = Url::fromRoute('std.manage_studyobjectcollection');
-      $url->setRouteParameter('studyuri', base64_encode($this->getStudyObjectCollection()->isMemberOf->uri));
+      $url = Url::fromRoute('rep.describe_element', ['elementuri' => base64_encode($this->getStudyObjectCollection()->isMemberOf->uri)]);
       $form_state->setRedirectUrl($url);  
       return;
     }  

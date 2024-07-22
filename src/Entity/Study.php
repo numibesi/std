@@ -68,9 +68,9 @@ class Study {
         return $output;
     }
 
-    foreach ($output as $uri => $card) {
-        $form['element_' . $index] = $card;
-    }
+    //foreach ($output as $uri => $card) {
+    //    $form['element_' . $index] = $card;
+    //}
 
     $index = 0;
     foreach ($list as $element) {
@@ -112,8 +112,9 @@ class Study {
           'currentroute' => 'std.edit_study'
         ]);
 
-        $delete_study = Url::fromRoute('std.delete_study', [
-          'studyuri' => base64_encode($element->uri),
+        $delete_study = Url::fromRoute('rep.delete_element', [
+          'elementtype' => 'study',
+          'elementuri' => base64_encode($element->uri),
           'currenturl' => $previousUrl,
         ]);
       }
@@ -123,6 +124,8 @@ class Study {
         '#attributes' => [
             'class' => ['card', 'mb-3'],
         ],
+        '#prefix' => '<div class="col-md-6">',
+        '#suffix' => '</div>', 
         'card_body_'.$index => [
             '#type' => 'container', // Use container for the card body
             '#attributes' => [
@@ -139,7 +142,7 @@ class Study {
               '#title' => 'Manage Elements',
               '#url' => $manage_elements, 
               '#attributes' => [
-                  'class' => ['btn', 'btn-secondary'],
+                  'class' => ['btn', 'btn-sm', 'btn-secondary'],
                   'style' => 'margin-right: 10px;',
               ],
             ],
@@ -148,7 +151,7 @@ class Study {
               '#title' => 'View',
               '#url' => $view_study, 
               '#attributes' => [
-                  'class' => ['btn', 'btn-secondary'],
+                  'class' => ['btn', 'btn-sm', 'btn-secondary'],
                   'style' => 'margin-right: 10px;',
               ],
             ],
@@ -157,7 +160,7 @@ class Study {
               '#title' => 'Edit',
               '#url' => $edit_study, 
               '#attributes' => [
-                  'class' => ['btn', 'btn-secondary'],
+                  'class' => ['btn', 'btn-sm', 'btn-secondary'],
                   'style' => 'margin-right: 10px;',
               ],
             ],
@@ -166,7 +169,8 @@ class Study {
               '#title' => 'Delete',
               '#url' => $delete_study, 
               '#attributes' => [
-                  'class' => ['btn', 'btn-secondary'],
+                'onclick' => 'if(!confirm("Really Delete?")){return false;}',
+                'class' => ['btn', 'btn-sm', 'btn-secondary'],
               ],
             ],
         ],

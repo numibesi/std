@@ -229,6 +229,7 @@ class ManageStudyObjectForm extends FormBase {
 
     // ADD STUDY OBJECT
     if ($button_name === 'add_so') {
+      Utils::trackingStoreUrls($uid, $previousUrl, 'std.add_studyobject');
       $url = Url::fromRoute('std.add_studyobject');
       $url->setRouteParameter('studyobjectcollectionuri', base64_encode($this->getStudyObjectCollection()->uri));
       $form_state->setRedirectUrl($url);
@@ -242,6 +243,7 @@ class ManageStudyObjectForm extends FormBase {
         \Drupal::messenger()->addWarning(t("Select one Study Object to be edited. No more than one Study Object can be edited at once."));      
       } else {
         $first = array_shift($rows);
+        Utils::trackingStoreUrls($uid, $previousUrl, 'std.edit_studyobject');
         $url = Url::fromRoute('std.edit_studyobject');
         $url->setRouteParameter('studyobjecturi', base64_encode($first));
         $form_state->setRedirectUrl($url);  

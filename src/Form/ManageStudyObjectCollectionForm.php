@@ -81,9 +81,9 @@ class ManageStudyObjectCollectionForm extends FormBase {
                ' role="button">Mng. Objects</a>';
         $output[$soc->uri] = [
           'soc_uri' => t('<a href="'.$root_url.REPGUI::DESCRIBE_PAGE.base64_encode($soc->uri).'">'.Utils::namespaceUri($soc->uri).'</a>'),         
-          'soc_reference' => $soc->socreference,     
+          'soc_reference' => $soc->virtualColumn->socreference,     
           'soc_label' => $soc->label,     
-          'soc_grounding_label' => $soc->groundingLabel,
+          'soc_grounding_label' => $soc->virtualColumn->groundingLabel,
           'soc_operations' => t($button),     
         ];
       }

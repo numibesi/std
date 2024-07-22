@@ -11,11 +11,7 @@ use Drupal\Component\Serialization\Json;
 use Drupal\file\Entity\File;
 use Drupal\rep\ListManagerEmailPage;
 use Drupal\rep\Utils;
-//use Drupal\rep\Entity\StudyObject;
 use Drupal\std\Entity\Study;
-//use Drupal\std\Entity\StudyRole;
-//use Drupal\std\Entity\VirtualColumn;
-//use Drupal\std\Entity\StudyObjectCollection;
 
 class STDSelectStudyForm extends FormBase {
 
@@ -99,47 +95,19 @@ class STDSelectStudyForm extends FormBase {
 
     // RETRIEVE ELEMENTS
     $this->setList(ListManagerEmailPage::exec($this->element_type, $this->manager_email, $page, $pagesize));
-    //dpm($this->getList());
 
     $this->single_class_name = "";
     $this->plural_class_name = "";
     switch ($this->element_type) {
-        case "study":
-            $this->single_class_name = "Study";
-            $this->plural_class_name = "Studies";
-            $header = Study::generateHeader();
-            //$output = Study::generateOutput($this->getList()); 
-            $output = Study::generateOutputAsCard($this->getList()); 
-            break;
-        /*
-        case "studyrole":
-            $this->single_class_name = "Study Role";
-            $this->plural_class_name = "Study Roles";
-            $header = StudyRole::generateHeader();
-            $output = StudyRole::generateOutput($this->getList());    
-            break;
-        case "virtualcolumn":
-            $this->single_class_name = "Virtual Column";
-            $this->plural_class_name = "Virtual Columns";
-            $header = VirtualColumn::generateHeader();
-            $output = VirtualColumn::generateOutput($this->getList());    
-            break;
-        case "studyobjectcollection":
-            $this->single_class_name = "Study Object Collection";
-            $this->plural_class_name = "Study Object Collections";
-            $header = StudyObjectCollection::generateHeader();
-            $output = StudyObjectCollection::generateOutput($this->getList());    
-            break;
-        case "studyobject":
-            $this->single_class_name = "Study Object";
-            $this->plural_class_name = "Study Objects";
-            $header = StudyObject::generateHeader();
-            $output = StudyObject::generateOutput($this->getList());    
-            break;
-        */
-        default:
-            $this->single_class_name = "Object of Unknown Type";
-            $this->plural_class_name = "Objects of Unknown Types";
+      case "study":
+        $this->single_class_name = "Study";
+        $this->plural_class_name = "Studies";
+        $header = Study::generateHeader();
+        $output = Study::generateOutputAsCard($this->getList()); 
+        break;
+      default:
+        $this->single_class_name = "Object of Unknown Type";
+        $this->plural_class_name = "Objects of Unknown Types";
     }
 
     // PUT FORM TOGETHER
@@ -156,55 +124,40 @@ class STDSelectStudyForm extends FormBase {
         '#value' => $this->t('Add New ' . $this->single_class_name),
         '#name' => 'add_element',
     ];
-    /*
-    $form['edit_selected_element'] = [
-        '#type' => 'submit',
-        '#value' => $this->t('Edit Selected ' . $this->single_class_name),
-        '#name' => 'edit_element',
-    ];
-    $form['delete_selected_element'] = [
-        '#type' => 'submit',
-        '#value' => $this->t('Delete Selected ' . $this->plural_class_name),
-        '#name' => 'delete_element',
-    ];
-    */
     $form['space1'] = [
       '#type' => 'item',
       '#value' => $this->t('<br>'),
     ];
 
-    //if ($this->element_type == "study") {
-      // Add elements as cards
-      $index = 0;
-      foreach ($output as $uri => $card) {
-          $index++; 
-          $form['element_' . $index] = $card;
-      }
-    /*
-    } else {
-      // Add elements as table
-      $form['element_table'] = [
-        '#type' => 'tableselect',
-        '#header' => $header,
-        '#options' => $output,
-        '#js_select' => FALSE,
-        '#empty' => t('No ' . $this->plural_class_name . ' found'),
-      ];
+    // Loop through $output and creates two cards per row
+    $index = 0;
+    foreach (array_chunk($output, 2, true) as $row) {
+        $index++;
+        $form['row_' . $index] = [
+            '#type' => 'container',
+            '#attributes' => [
+                'class' => ['row', 'mb-3'],
+            ],
+        ];
+        $indexCard = 0;
+        foreach ($row as $uri => $card) {
+            $indexCard++;
+            $form['row_' . $index]['element_' . $indexCard] = $card;     
+        }
     }
-    */
-
+    
     $form['pager'] = [
-        '#theme' => 'list-page',
-        '#items' => [
-            'page' => strval($page),
-            'first' => ListManagerEmailPage::link($this->element_type, 1, $pagesize),
-            'last' => ListManagerEmailPage::link($this->element_type, $total_pages, $pagesize),
-            'previous' => $previous_page_link,
-            'next' => $next_page_link,
-            'last_page' => strval($total_pages),
-            'links' => null,
-            'title' => ' ',
-        ],
+      '#theme' => 'list-page',
+      '#items' => [
+          'page' => strval($page),
+          'first' => ListManagerEmailPage::link($this->element_type, 1, $pagesize),
+          'last' => ListManagerEmailPage::link($this->element_type, $total_pages, $pagesize),
+          'previous' => $previous_page_link,
+          'next' => $next_page_link,
+          'last_page' => strval($total_pages),
+          'links' => null,
+          'title' => ' ',
+      ],
     ];
     $form['submit'] = [
         '#type' => 'submit',
@@ -245,108 +198,10 @@ class STDSelectStudyForm extends FormBase {
 
     // ADD ELEMENT
     if ($button_name === 'add_element') {
-      //if ($this->element_type == 'study') {
         Utils::trackingStoreUrls($uid, $previousUrl, 'std.add_study');
         $url = Url::fromRoute('std.add_study');
-      //} 
-      /*
-      if ($this->element_type == 'studyrole') {
-        Utils::trackingStoreUrls($uid, $previousUrl, 'std.add_studyrole');
-        $url = Url::fromRoute('std.add_studyrole', [
-          'studyuri' => 'none', 
-          'fixstd' => 'F',
-        ]);
-      } 
-      if ($this->element_type == 'studyobjectcollection') {
-        Utils::trackingStoreUrls($uid, $previousUrl, 'std.add_studyobjectcollection');
-        $url = Url::fromRoute('std.add_studyobjectcollection', [
-          'studyuri' => 'none', 
-          'fixstd' => 'F',
-        ]);
-      } 
-      if ($this->element_type == 'studyobject') {
-        Utils::trackingStoreUrls($uid, $previousUrl, 'std.add_studyobject');
-        $url = Url::fromRoute('std.add_studyobject');
-      } 
-      if ($this->element_type == 'virtualcolumn') {
-        Utils::trackingStoreUrls($uid, $previousUrl, 'std.add_virtualcolumn');
-        $url = Url::fromRoute('std.add_virtualcolumn', [
-          'studyuri' => 'none',
-          'fixstd' => 'F',
-        ]);
-      }
-      */ 
       $form_state->setRedirectUrl($url);
     }  
-
-    /*
-    // EDIT ELEMENT
-    if ($button_name === 'edit_element') {
-      if (sizeof($rows) < 1) {
-        \Drupal::messenger()->addWarning(t("Select the exact " . $this->single_class_name . " to be edited."));      
-      } else if ((sizeof($rows) > 1)) {
-        \Drupal::messenger()->addWarning(t("No more than one " . $this->single_class_name . " can be edited at once."));      
-      } else {
-        $first = array_shift($rows);
-        //if ($this->element_type == 'study') {
-        //  Utils::trackingStoreUrls($uid, $previousUrl, 'std.edit_study');
-        //  $url = Url::fromRoute('std.edit_study', ['studyuri' => base64_encode($first)]);
-        //} 
-        if ($this->element_type == 'studyrole') {
-          Utils::trackingStoreUrls($uid, $previousUrl, 'std.edit_studyrole');
-          $url = Url::fromRoute('std.edit_studyrole', [
-            'studyroleuri' => base64_encode($first),
-            'fixstd' => 'F',
-          ]);
-        } 
-        if ($this->element_type == 'studyobjectcollection') {
-          Utils::trackingStoreUrls($uid, $previousUrl, 'std.edit_studyobjectcollection');
-          $url = Url::fromRoute('std.edit_studyobjectcollection', ['studyobjectcollectionuri' => base64_encode($first)]);
-        } 
-        if ($this->element_type == 'studyobject') {
-          Utils::trackingStoreUrls($uid, $previousUrl, 'std.edit_studyobject');
-          $url = Url::fromRoute('std.edit_studyobject', ['studyobjecturi' => base64_encode($first)]);
-        } 
-        if ($this->element_type == 'virtualcolumn') {
-          Utils::trackingStoreUrls($uid, $previousUrl, 'std.edit_virtualcolumn');
-          $url = Url::fromRoute('std.edit_virtualcolumn', [
-            'virtualcolumnuri' => base64_encode($first),
-            'fixstd' => 'F',
-          ]);
-        } 
-        $form_state->setRedirectUrl($url);
-      } 
-    }
-    */
-
-    /*
-    // DELETE ELEMENT
-    if ($button_name === 'delete_element') {
-      if (sizeof($rows) <= 0) {
-        \Drupal::messenger()->addWarning(t("At least one " . $this->single_class_name . " needs to be selected to be deleted."));      
-      } else {
-        $api = \Drupal::service('rep.api_connector');
-        foreach($rows as $uri) {
-          if ($this->element_type == 'study') {
-            $api->studyDel($uri);
-          } 
-          //if ($this->element_type == 'studyrole') {
-          //  $api->studyRoleDel($uri);
-          //} 
-          //if ($this->element_type == 'studyobjectcollection') {
-          //  $api->studyObjectCollectionDel($uri);
-          //} 
-          //if ($this->element_type == 'studyobject') {
-          //  $api->Del($uri);
-          //} 
-          //if ($this->element_type == 'virtualcolumn') {
-          //  $api->virtualColumnDel($uri);
-          //} 
-        }
-        \Drupal::messenger()->addMessage(t("Selected " . $this->plural_class_name . " has/have been deleted successfully."));      
-      }
-    }
-    */ 
 
     if ($button_name === 'back') {
       $url = Url::fromRoute('std.search');

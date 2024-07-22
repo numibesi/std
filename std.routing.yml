@@ -38,7 +38,7 @@ std.select_study:
     no_cache: 'TRUE'
 
 std.select_element_bystudy:
-  path: 'std/selectbystudy/{studyuri}/{elementtype}/{page}/{pagesize}'
+  path: 'std/selectbystudy/{studyuri}/{elementtype}/{mode}/{page}/{pagesize}'
   defaults:
     _form: '\Drupal\std\Form\STDSelectByStudyForm'
   requirements:
@@ -124,16 +124,7 @@ std.edit_study:
     _permission: 'access content'  
     _custom_access_check: 'TRUE'      
   options:
-    no_cache: 'TRUE'
-
-std.delete_study:
-  path: 'std/manage/deletestudy/{studyuri}/{currenturl}'
-  defaults:
-    _controller: '\Drupal\std\Controller\DeleteStudyController::exec'
-    _title: "Delete Study"
-  requirements:
-    _permission: 'access content'
-    _custom_access_check: 'TRUE'    
+    no_cache: 'TRUE'  
 
 # Study Role CRUD options
 

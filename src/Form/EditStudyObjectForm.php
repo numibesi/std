@@ -5,6 +5,7 @@ namespace Drupal\std\Form;
 use Drupal\Core\Form\FormBase;
 use Drupal\Core\Form\FormStateInterface;
 use Drupal\Core\Url;
+use Symfony\Component\HttpFoundation\RedirectResponse;
 use Drupal\rep\Utils;
 use Drupal\rep\Vocabulary\HASCO;
 
@@ -60,8 +61,12 @@ class EditStudyObjectForm extends FormBase {
     // RETRIEVE STUDY OBJECT BY URI
     $api = \Drupal::service('rep.api_connector');
     $studyObject = $api->parseObjectResponse($api->getUri($uri),'getUri');
+    if ($studyObject == NULL) {
+      \Drupal::messenger()->addError(t("Could not retrieve Study Object with uri=".$uri));
+      self::backurl();
+      return;
+    } 
     $this->setStudyObject($studyObject);
-    dpm($this->getStudyObject());
 
     // RETRIEVE ENTITY BY URI
     $entityContent = ' '; 
@@ -188,7 +193,7 @@ class EditStudyObjectForm extends FormBase {
     $button_name = $triggering_element['#name'];
 
     if ($button_name === 'back') {
-      self::backurl($this->getStudyObject()->isMemberOf->uri);
+      self::backurl();
       return;
     } 
 
@@ -226,24 +231,24 @@ class EditStudyObjectForm extends FormBase {
       } else {
         \Drupal::messenger()->addError(t("Study Object failed to be added."));
       }
-      self::backurl($this->getStudyObject()->isMemberOf->uri);
+      self::backurl();
       return;
     } catch(\Exception $e) {
       \Drupal::messenger()->addError(t("An error occurred while adding a Study Object: ".$e->getMessage()));
-      self::backurl($this->getStudyObject()->isMemberOf->uri);
+      self::backurl();
       return;
     }
   }
 
-  function backUrl($uri) {
-    $url = Url::fromRoute('std.select_element_bysoc', [
-      'socuri' => base64_encode($uri),
-      'elementtype' => 'studyobject',
-      'page' => '0',
-      'pagesize' => '12',
-    ]);
-    $form_state->setRedirectUrl($url);
-    return;
+  function backUrl() {
+    $uid = \Drupal::currentUser()->id();
+    $previousUrl = Utils::trackingGetPreviousUrl($uid, 'std.edit_studyobject');
+    if ($previousUrl) {
+      $response = new RedirectResponse($previousUrl);
+      $response->send();
+      return;
+    }
   }
+  
 
 }

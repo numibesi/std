@@ -133,7 +133,7 @@ class STDPropertyForm extends FormBase {
     // RETRIEVE ELEMENTS
     $this->setList(ListPropertyPage::exec($this->getElement(), $this->getProperty(), $this->getElementType(), $page, $pagesize));
 
-    //dpm($this->getList()[0]->dataFile);
+    //dpm($this->getList());
 
     // PUT FORM TOGETHER
     $form['page_title'] = [

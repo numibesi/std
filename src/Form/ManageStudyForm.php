@@ -79,7 +79,7 @@ class ManageStudyForm extends FormBase {
                  'link' => self::urlSelectByStudy($this->getStudy()->uri,'virtualcolumn')),
       5 => array('value' => '<h1>'.$totalSOCs.'</h1><h3>Object<br>Collections</h3>', 
                  'link' => self::urlSelectByStudy($this->getStudy()->uri,'studyobjectcollection')),
-      6 => array('value' => '<h1>'.$totalSOs.'</h1><h3>Subjects<br>&nbsp;</h3>', 
+      6 => array('value' => '<h1>'.$totalSOs.'</h1><h3>Objects<br>&nbsp;</h3>', 
                  'link' => self::urlSelectByStudy($this->getStudy()->uri,'studyobject')),
     );
 
@@ -95,6 +95,26 @@ class ManageStudyForm extends FormBase {
     //  '#attributes' => array('class' => array('col-md-1')),
     //);
 
+    $piName = ' ';
+    if (isset($this->getStudy()->pi) &&
+        $this->getStudy()->pi != NULL &&
+        $this->getStudy()->pi->name != NULL) {
+      $piName = $this->getStudy()->pi->name;
+    }
+
+    $institutionName = ' ';
+    if (isset($this->getStudy()->institution) &&
+        $this->getStudy()->institution != NULL &&
+        $this->getStudy()->institution->name != NULL) {
+      $institutionName = $this->getStudy()->institution->name;
+    }
+
+    $title = ' ';
+    if (isset($this->getStudy()->title) &&
+        $this->getStudy()->title != NULL) {
+      $title = $this->getStudy()->title;
+    }
+
     // First row with a single card
     $form['row1']['card0'] = array(
         //'#type' => 'container',
@@ -107,9 +127,9 @@ class ManageStudyForm extends FormBase {
                 '#markup' => '<br><div class="card"><div class="card-body">' .
                   $this->t('<h3>') . ' ' . $this->getStudy()->label . '</h3><br>' .
                   $this->t('<b>URI</b>: ') . ' ' . $this->getStudy()->uri . '<br>' .
-                  $this->t('<b>Name</b>: ') . ' ' . $this->getStudy()->title . '<br>' .
-                  $this->t('<b>PI</b>: ') . ' ' . $this->getStudy()->pi->name . '<br>' .
-                  $this->t('<b>Institution</b>: ') . ' ' . $this->getStudy()->institution->name . '<br>' .
+                  $this->t('<b>Name</b>: ') . ' ' . $title . '<br>' .
+                  $this->t('<b>PI</b>: ') . ' ' . $piName . '<br>' .
+                  $this->t('<b>Institution</b>: ') . ' ' . $institutionName . '<br>' .
                   $this->t('<b>Description</b>: ') . ' ' . $this->getStudy()->comment . '<br>' .
                   '</div></div>',
             ),
@@ -271,9 +291,14 @@ class ManageStudyForm extends FormBase {
     $previousUrl = \Drupal::request()->getRequestUri();
     Utils::trackingStoreUrls($uid, $previousUrl, 'std.select_element_bystudy');
     $url = Url::fromRoute('std.select_element_bystudy');
+    if ($elementType == 'da') {
+      $url->setRouteParameter('mode', 'card');
+    } else {
+      $url->setRouteParameter('mode', 'table');
+    }
     $url->setRouteParameter('studyuri', base64_encode($studyuri));
     $url->setRouteParameter('elementtype', $elementType);
-    $url->setRouteParameter('page', 0);
+    $url->setRouteParameter('page', 1);
     $url->setRouteParameter('pagesize', 12);
     return $url->toString();
   }
