@@ -12,8 +12,7 @@ class VirtualColumn {
     return $header = [
       'element_uri' => t('URI'),
       'element_study' => t('Study'),
-      'element_soc_name' => t('SOC Name'),
-      'element_original_id' => t('Original ID'),
+      'element_soc_reference' => t('SOC Reference'),
     ];
   
   }
@@ -30,15 +29,20 @@ class VirtualColumn {
         $uri = $element->uri;
       }
       $uri = Utils::namespaceUri($uri);
-      $label = ' ';
-      if ($element->label != NULL) {
-        $label = $element->label;
+      $study = ' ';
+      if ($element->isMemberOf != NULL && $element->isMemberOf->label != NULL) {
+        $study = $element->isMemberOf->label;
+      }
+      $soc = ' ';
+      if ($element->socreference != NULL) {
+        $soc = $element->socreference;
       }
       $root_url = \Drupal::request()->getBaseUrl();
       $encodedUri = rawurlencode(rawurlencode($element->uri));
       $output[$element->uri] = [
         'element_uri' => t('<a href="'.$root_url.REPGUI::DESCRIBE_PAGE.base64_encode($uri).'">'.$uri.'</a>'),     
-        'element_name' => t($label),     
+        'element_study' => t($study),     
+        'element_soc_reference' => t($soc),     
       ];
     }
     return $output;

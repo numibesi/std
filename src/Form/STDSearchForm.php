@@ -96,7 +96,10 @@ class STDSearchForm extends FormBase {
       '#title' => $this->t('Element Type'),
       '#required' => TRUE,
       '#options' => [
-        'semanticstudydesign' => $this->t('Semantic Study Designs'),
+        'dsg' => $this->t('DSGs'),
+        'dd' => $this->t('DDs'),
+        'sdd' => $this->t('SDDs'),
+        'da' => $this->t('DAs'),
         'study' => $this->t('Studies'),
         'studyrole' => $this->t('Study Roles'),
         'virtualcolumn' => $this->t('Virtual Columns'),

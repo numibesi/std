@@ -3,3 +3,11 @@ th {
     font-size:12pt;
     font-weight: bold;
   }
+.my-fieldset-wrapper fieldset {
+    border: 1px solid #D3D3D3; /* Add your desired border style */
+    padding: 10px; /* Add optional padding for the fieldset */
+  }
+.inline-container {
+  display: inline-block;
+}
+

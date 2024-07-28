@@ -9,93 +9,130 @@ use Symfony\Component\HttpFoundation\RedirectResponse;
 use Drupal\rep\Utils;
 use Drupal\rep\Vocabulary\HASCO;
 
-class AddStudyObjectForm extends FormBase {
+class EditStudyObjectForm extends FormBase {
 
-  protected $studyObjectCollection;
+  protected $study;
 
-  public function getStudyObjectCollection() {
-    return $this->studyObjectCollection;
+  protected $studyObject;
+
+  protected $entity;
+
+  public function getStudy() {
+    return $this->study;
+  }
+  public function setStudy($study) {
+    return $this->study = $study; 
   }
 
-  public function setStudyObjectCollection($studyObjectCollection) {
-    return $this->studyObjectCollection = $studyObjectCollection; 
+  public function getStudyObject() {
+    return $this->studyObject;
+  }
+  public function setStudyObject($studyObject) {
+    return $this->studyObject = $studyObject; 
+  }
+
+  public function getEntity() {
+    return $this->entity;
+  }
+  public function setEntity($entity) {
+    return $this->entity = $entity; 
   }
 
   /**
    * {@inheritdoc}
    */
   public function getFormId() {
-    return 'add_studyobject_form';
+    return 'edit_studyobject_form';
   }
 
   /**
    * {@inheritdoc}
    */
-  public function buildForm(array $form, FormStateInterface $form_state, $studyobjectcollectionuri = NULL) {
+  public function buildForm(array $form, FormStateInterface $form_state, $studyobjecturi = NULL) {
 
     # SET CONTEXT
-    $uri=base64_decode($studyobjectcollectionuri);
+    $uri=base64_decode($studyobjecturi);
 
     $uemail = \Drupal::currentUser()->getEmail();
     $uid = \Drupal::currentUser()->id();
     $user = \Drupal\user\Entity\User::load($uid);
     $username = $user->name->value;
 
-    // RETRIEVE STUDY OBJECT COLLECTION BY URI
+    // RETRIEVE STUDY OBJECT BY URI
     $api = \Drupal::service('rep.api_connector');
-    $studyObjectCollection = $api->parseObjectResponse($api->getUri($uri),'getUri');
-    if ($studyObjectCollection == NULL) {
-      \Drupal::messenger()->addError(t("Could not retrieve SOC with uri=".$uri));
+    $studyObject = $api->parseObjectResponse($api->getUri($uri),'getUri');
+    if ($studyObject == NULL) {
+      \Drupal::messenger()->addError(t("Could not retrieve Study Object with uri=".$uri));
       self::backurl();
       return;
     } 
-    $this->setStudyObjectCollection($studyObjectCollection);
-    
-    $study = ' ';
-    if ($this->getStudyObjectCollection() != NULL &&
-        $this->getStudyObjectCollection()->isMemberOf != NULL &&
-        $this->getStudyObjectCollection()->isMemberOf->uri != NULL &&
-        $this->getStudyObjectCollection()->isMemberOf->label != NULL) {
-      $study = Utils::fieldToAutocomplete(
-        $this->getStudyObjectCollection()->isMemberOf->uri,
-        $this->getStudyObjectCollection()->isMemberOf->label);
+    $this->setStudyObject($studyObject);
+
+    // RETRIEVE ENTITY BY URI
+    $entityContent = ' '; 
+    if ($studyObject != NULL &&
+        $studyObject->typeUri != NULL && 
+        $studyObject->typeUri != HASCO::STUDY_OBJECT) {
+      $entity = $api->parseObjectResponse($api->getUri($studyObject->typeUri),'getUri');
+      $this->setEntity($entity);
+      $entityContent = Utils::fieldToAutocomplete(
+        $this->getEntity()->uri,
+        $this->getEntity()->label
+      );
+    }
+    if ($studyObject->typeUri == HASCO::STUDY_OBJECT) {
+      $studyObject->typeUri = NULL;
     }
 
-    $soc = ' ';
-    if ($this->getStudyObjectCollection() != NULL &&
-        $this->getStudyObjectCollection()->uri != NULL &&
-        $this->getStudyObjectCollection()->label != NULL) {
-      $soc = Utils::fieldToAutocomplete(
-        $this->getStudyObjectCollection()->uri,
-        $this->getStudyObjectCollection()->label);
+    $studyContent = ' ';
+    if ($this->getStudyObject()->isMemberOf != NULL &&
+        $this->getStudyObject()->isMemberOf->isMemberOf != NULL &&
+        $this->getStudyObject()->isMemberOf->isMemberOf->uri != NULL &&
+        $this->getStudyObject()->isMemberOf->isMemberOf->label != NULL) {
+      $studyContent = Utils::fieldToAutocomplete(
+        $this->getStudyObject()->isMemberOf->isMemberOf->uri,
+        $this->getStudyObject()->isMemberOf->isMemberOf->label);
+    }
+
+    $socContent = ' ';
+    if ($this->getStudyObject() != NULL &&
+        $this->getStudyObject()->isMemberOf != NULL &&
+        $this->getStudyObject()->isMemberOf->uri != NULL &&
+        $this->getStudyObject()->isMemberOf->label != NULL) {
+      $socContent = Utils::fieldToAutocomplete(
+        $this->getStudyObject()->isMemberOf->uri,
+        $this->getStudyObject()->isMemberOf->label);
     }
 
     $form['studyobject_study'] = [
       '#type' => 'textfield',
       '#title' => $this->t('Study'),
-      '#default_value' => $study,
+      '#default_value' => $studyContent,
       '#disabled' => TRUE,
     ];
     $form['studyobject_soc'] = [
       '#type' => 'textfield',
       '#title' => $this->t('Study Object Collection (SOC)'),
-      '#default_value' => $soc,
+      '#default_value' => $socContent,
       '#disabled' => TRUE,
     ];
     $form['studyobject_original_id'] = [
       '#type' => 'textfield',
       '#title' => $this->t('Original ID (required)'),
+      '#default_value' => $this->getStudyObject()->originalId,
     ];
-    if (\Drupal::moduleHandler()->moduleExists('sem')) {
+    if (\Drupal::moduleHandler()->moduleExists('sem')) { 
       $form['studyobject_entity'] = [
         '#type' => 'textfield',
         '#title' => $this->t('Entity (required)'),
         '#autocomplete_route_name' => 'sem.semanticvariable_entity_autocomplete',
+        '#default_value' => $entityContent,
       ];
     } else {
       $form['studyobject_entity'] = [
         '#type' => 'textfield',
         '#title' => $this->t('Entity (required)'),
+        '#default_value' => $entityContent,
       ];
     }
     $form['studyobject_domainscope_object'] = [
@@ -163,19 +200,20 @@ class AddStudyObjectForm extends FormBase {
     $useremail = \Drupal::currentUser()->getEmail();
 
     $entityUri = NULL;
-    if ($form_state->getValue('studyobject_entity') == NULL || $form_state->getValue('studyobject_entity') == '') {
-      $entityUri = Utils::uriFromAutocomplete(HASCO::STUDY_OBJECT);
-    } else {
+    if ($form_state->getValue('studyobject_entity') != NULL && $form_state->getValue('studyobject_entity') != '') {
       $entityUri = Utils::uriFromAutocomplete($form_state->getValue('studyobject_entity'));
-    } 
+    } else {
+      $entityUri = HASCO::STUDY_OBJECT;
+    }
 
     $socUri = NULL;
-    if ($this->getStudyObjectCollection() != NULL) {
-      $socUri = $this->getStudyObjectCollection()->uri; 
+    if ($this->getStudyObject() != NULL &&
+        $this->getStudyObject()->isMemberOf != NULL &&
+        $this->getStudyObject()->isMemberOf->uri != NULL) {
+        $socUri = $this->getStudyObject()->isMemberOf->uri; 
     } 
 
-    $newStudyObjectUri = Utils::uriGen('studyobject');
-    $studyObjectJSON = '{"uri":"'. $newStudyObjectUri .'",'.
+    $studyObjectJSON = '{"uri":"'. $this->getStudyObject()->uri .'",'.
         '"typeUri":"'.$entityUri.'",'.
         '"hascoTypeUri":"'.HASCO::STUDY_OBJECT.'",'.
         '"isMemberOfUri":"'.$socUri.'",'.
@@ -186,6 +224,7 @@ class AddStudyObjectForm extends FormBase {
 
     try {
       $api = \Drupal::service('rep.api_connector');
+      $api->elementDel('studyobject',$this->getStudyObject()->uri);
       $message = $api->parseObjectResponse($api->elementAdd('studyobject',$studyObjectJSON),'elementAdd');
       if ($message != null) {
         \Drupal::messenger()->addMessage(t("Study Object has been added successfully."));
@@ -203,7 +242,7 @@ class AddStudyObjectForm extends FormBase {
 
   function backUrl() {
     $uid = \Drupal::currentUser()->id();
-    $previousUrl = Utils::trackingGetPreviousUrl($uid, 'std.add_studyobject');
+    $previousUrl = Utils::trackingGetPreviousUrl($uid, 'std.edit_studyobject');
     if ($previousUrl) {
       $response = new RedirectResponse($previousUrl);
       $response->send();
@@ -211,6 +250,5 @@ class AddStudyObjectForm extends FormBase {
     }
   }
   
-
 
 }

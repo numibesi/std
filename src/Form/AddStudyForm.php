@@ -4,10 +4,17 @@ namespace Drupal\std\Form;
 
 use Drupal\Core\Form\FormBase;
 use Drupal\Core\Form\FormStateInterface;
+use Drupal\Core\Ajax\AjaxResponse;
+use Drupal\Core\Ajax\AppendCommand;
+use Drupal\Core\Ajax\HtmlCommand;
+use Drupal\Core\Url;
+use Symfony\Component\HttpFoundation\RedirectResponse;
 use Drupal\rep\Utils;
 use Drupal\rep\Vocabulary\HASCO;
 
 class AddStudyForm extends FormBase {
+
+  public $pi = [];
 
   /**
    * {@inheritdoc}
@@ -20,28 +27,41 @@ class AddStudyForm extends FormBase {
    * {@inheritdoc}
    */
   public function buildForm(array $form, FormStateInterface $form_state) {
+    
+    //dpm($form_state->getValue('study_pi'));
+
     $form['study_short_name'] = [
       '#type' => 'textfield',
       '#title' => $this->t('Short Name'),
     ];
+
     $form['study_name'] = [
       '#type' => 'textfield',
       '#title' => $this->t('Long Name'),
     ];
+
+    $form['study_pi'] = [
+      '#type' => 'textfield',
+      '#title' => $this->t('PI'),
+    ];
+
     $form['study_description'] = [
       '#type' => 'textarea',
       '#title' => $this->t('Description'),
     ];
+
     $form['save_submit'] = [
       '#type' => 'submit',
       '#value' => $this->t('Save'),
       '#name' => 'save',
     ];
+
     $form['cancel_submit'] = [
       '#type' => 'submit',
       '#value' => $this->t('Cancel'),
       '#name' => 'back',
     ];
+
     $form['bottom_space'] = [
       '#type' => 'item',
       '#title' => t('<br><br>'),
@@ -74,36 +94,52 @@ class AddStudyForm extends FormBase {
     $button_name = $triggering_element['#name'];
 
     if ($button_name === 'back') {
-      $form_state->setRedirectUrl(Utils::selectBackUrl('study'));
+      self::backUrl();
       return;
     } 
 
-    $useremail = \Drupal::currentUser()->getEmail();
+    if ($button_name === 'save') {
+      $useremail = \Drupal::currentUser()->getEmail();
 
-    $newStudyUri = Utils::uriGen('study');
-    $studyJSON = '{"uri":"'. $newStudyUri .'",'.
-        '"typeUri":"'.HASCO::STUDY.'",'.
-        '"hascoTypeUri":"'.HASCO::STUDY.'",'.
-        '"label":"'.$form_state->getValue('study_short_name').'",'.
-        '"title":"'.$form_state->getValue('study_name').'",'.
-        '"comment":"'.$form_state->getValue('study_description').'",'.
-        '"hasSIRManagerEmail":"'.$useremail.'"}';
+      $newStudyUri = Utils::uriGen('study');
+      $studyJSON = '{"uri":"'. $newStudyUri .'",'.
+          '"typeUri":"'.HASCO::STUDY.'",'.
+          '"hascoTypeUri":"'.HASCO::STUDY.'",'.
+          '"label":"'.$form_state->getValue('study_short_name').'",'.
+          '"title":"'.$form_state->getValue('study_name').'",'.
+          '"comment":"'.$form_state->getValue('study_description').'",'.
+          '"hasSIRManagerEmail":"'.$useremail.'"}';
 
-    try {
-      $api = \Drupal::service('rep.api_connector');
-      $message = $api->parseObjectResponse($api->studyAdd($studyJSON),'studyAdd');
-      if ($message != null) {
-        \Drupal::messenger()->addMessage(t("Study has been added successfully."));
+      try {
+        $api = \Drupal::service('rep.api_connector');
+        $message = $api->parseObjectResponse($api->studyAdd($studyJSON),'studyAdd');
+        if ($message != null) {
+          \Drupal::messenger()->addMessage(t("Study has been added successfully."));
+        }
+        self::backUrl();
+        return;
+
+      } catch(\Exception $e) {
+        \Drupal::messenger()->addMessage(t("An error occurred while adding a study: ".$e->getMessage()));
+        self::backUrl();
+        return;
       }
-      $form_state->setRedirectUrl(Utils::selectBackUrl('study'));
-      return;
-
-    } catch(\Exception $e) {
-      \Drupal::messenger()->addMessage(t("An error occurred while adding a study: ".$e->getMessage()));
-      $form_state->setRedirectUrl(Utils::selectBackUrl('study'));
-      return;
     }
 
+    return;
+
   }
+
+  function backUrl() {
+    $uid = \Drupal::currentUser()->id();
+    $previousUrl = Utils::trackingGetPreviousUrl($uid, 'std.add_study');
+    if ($previousUrl) {
+      $response = new RedirectResponse($previousUrl);
+      $response->send();
+      return;
+    }
+  }
+  
+
 
 }

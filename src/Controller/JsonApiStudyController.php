@@ -24,16 +24,16 @@ class JsonApiStudyController extends ControllerBase{
     }
     $keyword = Xss::filter($input);
     $api = \Drupal::service('rep.api_connector');
-    $attribute_list = $api->listByKeyword('study',$keyword,10,0);
-    $obj = json_decode($attribute_list);
-    $attributes = [];
+    $study_list = $api->listByKeyword('study',$keyword,10,0);
+    $obj = json_decode($study_list);
+    $studies = [];
     if ($obj->isSuccessful) {
-      $attributes = $obj->body;
+      $studies = $obj->body;
     }
-    foreach ($attributes as $attribute) {
+    foreach ($studies as $study) {
       $results[] = [
-        'value' => $attribute->label . ' [' . $attribute->uri . ']',
-        'label' => $attribute->label,
+        'value' => $study->label . ' [' . $study->uri . ']',
+        'label' => $study->label,
       ];
     }
     return new JsonResponse($results);

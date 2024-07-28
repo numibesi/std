@@ -5,9 +5,12 @@ namespace Drupal\std\Form;
 use Drupal\Core\Form\FormBase;
 use Drupal\Core\Form\FormStateInterface;
 use Drupal\rep\ListKeywordPage;
+use Drupal\rep\Entity\StudyObject;
+use Drupal\rep\Entity\MetadataTemplate;
 use Drupal\std\Entity\Study;
+use Drupal\std\Entity\StudyRole;
 use Drupal\std\Entity\StudyObjectCollection;
-use Drupal\std\Entity\StudyObject;
+use Drupal\std\Entity\VirtualColumn;
 
 class STDListForm extends FormBase {
 
@@ -80,6 +83,34 @@ class STDListForm extends FormBase {
     $output = array();    
     switch ($elementtype) {
 
+      // DSG
+      case "dsg":
+        $class_name = "DSGs";
+        $header = MetadataTemplate::generateHeader();
+        $output = MetadataTemplate::generateOutput('dsg',$this->getList());    
+        break;
+  
+      // DD
+      case "dd":
+        $class_name = "DDs";
+        $header = MetadataTemplate::generateHeader();
+        $output = MetadataTemplate::generateOutput('dd',$this->getList());    
+        break;
+  
+      // SDD
+      case "sdd":
+        $class_name = "SDDs";
+        $header = MetadataTemplate::generateHeader();
+        $output = MetadataTemplate::generateOutput('sdd',$this->getList());    
+        break;
+  
+      // DA
+      case "da":
+        $class_name = "DAs";
+        $header = MetadataTemplate::generateHeader();
+        $output = MetadataTemplate::generateOutput('da',$this->getList());    
+        break;
+  
       // STUDY
       case "study":
         $class_name = "Studies";
@@ -87,6 +118,13 @@ class STDListForm extends FormBase {
         $output = Study::generateOutput($this->getList());    
         break;
   
+      // STUDY ROLE
+      case "studyrole":
+        $class_name = "Study Role";
+        $header = StudyRole::generateHeader();
+        $output = StudyRole::generateOutput($this->getList());    
+        break;
+
       // STUDY OBJECT COLLECTION
       case "studyobjectcollection":
         $class_name = "Study Object Collections";
@@ -101,11 +139,24 @@ class STDListForm extends FormBase {
         $output = StudyObject::generateOutput($this->getList());    
         break;
 
+      // VIRTUAL COLUMN
+      case "virtualcolumn":
+        $class_name = "Virtual Column";
+        $header = VirtualColumn::generateHeader();
+        $output = VirtualColumn::generateOutput($this->getList());    
+        break;
+
       default:
         $class_name = "Objects of Unknown Types";
     }
 
     // PUT FORM TOGETHER
+
+    $form['title'] = [
+      '#type' => 'item',
+      '#title' => t('<h3>Available <font color="DarkGreen">' . $class_name . '</font></h3>'),
+    ];
+
     $form['element_table'] = [
       '#type' => 'table',
       '#header' => $header,
