@@ -3,7 +3,7 @@ std.top_level:
   description: Manage Study Elements
   route_name: rep.home
   menu_name: main
-  weight: 20
+  weight: 30
   #requirements:
     #_permission: 'access content'
     
