@@ -21,7 +21,7 @@ class ManageStudyObjectCollectionForm extends FormBase {
   }
 
   public function setStudy($study) {
-    return $this->study = $study; 
+    return $this->study = $study;
   }
 
   /**
@@ -48,7 +48,7 @@ class ManageStudyObjectCollectionForm extends FormBase {
     $api = \Drupal::service('rep.api_connector');
     $study = $api->parseObjectResponse($api->getUri($uri),'getUri');
     $this->setStudy($study);
-    
+
     // RETRIEVE SLOT_ELEMENTS BY CONTAINER
     $socs = $api->parseObjectResponse($api->studyObjectCollectionsByStudy($this->getStudy()->uri),'studyObjectCollectionsByStudy');
 
@@ -80,11 +80,11 @@ class ManageStudyObjectCollectionForm extends FormBase {
         $button = '<a href="' . $link . '" class="btn btn-primary btn-sm" '.
                ' role="button">Mng. Objects</a>';
         $output[$soc->uri] = [
-          'soc_uri' => t('<a href="'.$root_url.REPGUI::DESCRIBE_PAGE.base64_encode($soc->uri).'">'.Utils::namespaceUri($soc->uri).'</a>'),         
-          'soc_reference' => $soc->virtualColumn->socreference,     
-          'soc_label' => $soc->label,     
+          'soc_uri' => t('<a href="'.$root_url.REPGUI::DESCRIBE_PAGE.base64_encode($soc->uri).'">'.Utils::namespaceUri($soc->uri).'</a>'),
+          'soc_reference' => $soc->virtualColumn->socreference,
+          'soc_label' => $soc->label,
           'soc_grounding_label' => $soc->virtualColumn->groundingLabel,
-          'soc_operations' => t($button),     
+          'soc_operations' => t($button),
         ];
       }
     }
@@ -102,19 +102,28 @@ class ManageStudyObjectCollectionForm extends FormBase {
       $form['add_soc'] = [
         '#type' => 'submit',
         '#value' => $this->t("Add SOC"),
-        '#name' => 'add_soc',  
+        '#name' => 'add_soc',
+        '#attributes' => [
+          'class' => ['btn', 'btn-primary', 'add-element-button'],
+        ],
       ];
     }
     $form['edit_soc'] = [
       '#type' => 'submit',
       '#value' => $this->t("Edit SOC"),
       '#name' => 'edit_soc',
+      '#attributes' => [
+        'class' => ['btn', 'btn-primary', 'edit-element-button'],
+      ],
     ];
     $form['delete_soc'] = [
       '#type' => 'submit',
       '#value' => $this->t('Delete Selected'),
-      '#name' => 'delete_socs',    
-      '#attributes' => ['onclick' => 'if(!confirm("Really Delete?")){return false;}'],
+      '#name' => 'delete_socs',
+      '#attributes' => [
+        'onclick' => 'if(!confirm("Really Delete?")){return false;}',
+        'class' => ['btn', 'btn-primary', 'delete-button'],
+      ],
     ];
     $form['soc_table'] = [
       '#type' => 'tableselect',
@@ -127,6 +136,9 @@ class ManageStudyObjectCollectionForm extends FormBase {
       '#type' => 'submit',
       '#value' => $this->t('Back to Studies'),
       '#name' => 'back',
+      '#attributes' => [
+        'class' => ['btn', 'btn-primary', 'back-button'],
+      ],
     ];
     $form['bottom_space'] = [
       '#type' => 'item',
@@ -144,13 +156,13 @@ class ManageStudyObjectCollectionForm extends FormBase {
 
   /**
    * {@inheritdoc}
-   */   
+   */
   public function submitForm(array &$form, FormStateInterface $form_state) {
 
     // RETRIEVE TRIGGERING BUTTON
     $triggering_element = $form_state->getTriggeringElement();
     $button_name = $triggering_element['#name'];
-  
+
     // RETRIEVE SELECTED ROWS, IF ANY
     $selected_rows = $form_state->getValue('soc_table');
     $rows = [];
@@ -170,15 +182,15 @@ class ManageStudyObjectCollectionForm extends FormBase {
     // EDIT SOC
     if ($button_name === 'edit_soc') {
       if (sizeof($rows) < 1) {
-        \Drupal::messenger()->addWarning(t("Select a SOC to be edited."));      
+        \Drupal::messenger()->addWarning(t("Select a SOC to be edited."));
       } else if (sizeof($rows) > 1) {
-        \Drupal::messenger()->addWarning(t("Select one SOC to be edited. No more than one SOC can be edited at once."));      
+        \Drupal::messenger()->addWarning(t("Select one SOC to be edited. No more than one SOC can be edited at once."));
       } else {
         $first = array_shift($rows);
         $url = Url::fromRoute('std.edit_studyobjectcollection');
         $url->setRouteParameter('studyobjectcollectionuri', base64_encode($first));
-        $form_state->setRedirectUrl($url);  
-      } 
+        $form_state->setRedirectUrl($url);
+      }
       return;
     }
 
@@ -186,7 +198,7 @@ class ManageStudyObjectCollectionForm extends FormBase {
     if ($button_name === 'delete_soc') {
       if (sizeof($rows) < 1) {
         \Drupal::messenger()->addMessage(t("Select SOCs to be deleted."));
-        return;      
+        return;
       } else {
         $api = \Drupal::service('rep.api_connector');
         //dpm($rows);
@@ -199,20 +211,20 @@ class ManageStudyObjectCollectionForm extends FormBase {
             $url = Url::fromRoute('std.manage_studyobjectcollection', ['studyuri' => base64_encode($this->getStudy()->uri)]);
             $form_state->setRedirectUrl($url);
             return;
-          }    
+          }
         }
         \Drupal::messenger()->addMessage(t("SOC(s) has been deleted successfully."));
         $url = Url::fromRoute('std.manage_studyobjectcollection');
         $url->setRouteParameter('studyuri', base64_encode($this->getStudy()->uri));
-        $form_state->setRedirectUrl($url);  
+        $form_state->setRedirectUrl($url);
         return;
-      } 
+      }
     }
 
     // BACK TO MAIN PAGE
     if ($button_name === 'back') {
       $form_state->setRedirectUrl(Utils::selectBackUrl('study'));
-    }  
+    }
   }
-  
+
 }

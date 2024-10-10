@@ -21,21 +21,21 @@ class EditStudyObjectForm extends FormBase {
     return $this->study;
   }
   public function setStudy($study) {
-    return $this->study = $study; 
+    return $this->study = $study;
   }
 
   public function getStudyObject() {
     return $this->studyObject;
   }
   public function setStudyObject($studyObject) {
-    return $this->studyObject = $studyObject; 
+    return $this->studyObject = $studyObject;
   }
 
   public function getEntity() {
     return $this->entity;
   }
   public function setEntity($entity) {
-    return $this->entity = $entity; 
+    return $this->entity = $entity;
   }
 
   /**
@@ -65,13 +65,13 @@ class EditStudyObjectForm extends FormBase {
       \Drupal::messenger()->addError(t("Could not retrieve Study Object with uri=".$uri));
       self::backurl();
       return;
-    } 
+    }
     $this->setStudyObject($studyObject);
 
     // RETRIEVE ENTITY BY URI
-    $entityContent = ' '; 
+    $entityContent = ' ';
     if ($studyObject != NULL &&
-        $studyObject->typeUri != NULL && 
+        $studyObject->typeUri != NULL &&
         $studyObject->typeUri != HASCO::STUDY_OBJECT) {
       $entity = $api->parseObjectResponse($api->getUri($studyObject->typeUri),'getUri');
       $this->setEntity($entity);
@@ -121,7 +121,7 @@ class EditStudyObjectForm extends FormBase {
       '#title' => $this->t('Original ID (required)'),
       '#default_value' => $this->getStudyObject()->originalId,
     ];
-    if (\Drupal::moduleHandler()->moduleExists('sem')) { 
+    if (\Drupal::moduleHandler()->moduleExists('sem')) {
       $form['studyobject_entity'] = [
         '#type' => 'textfield',
         '#title' => $this->t('Entity (required)'),
@@ -155,11 +155,17 @@ class EditStudyObjectForm extends FormBase {
       '#type' => 'submit',
       '#value' => $this->t('Save'),
       '#name' => 'save',
+      '#attributes' => [
+        'class' => ['btn', 'btn-primary', 'save-button'],
+      ],
     ];
     $form['cancel_submit'] = [
       '#type' => 'submit',
       '#value' => $this->t('Cancel'),
       '#name' => 'back',
+      '#attributes' => [
+        'class' => ['btn', 'btn-primary', 'cancel-button'],
+      ],
     ];
     $form['bottom_space'] = [
       '#type' => 'item',
@@ -195,7 +201,7 @@ class EditStudyObjectForm extends FormBase {
     if ($button_name === 'back') {
       self::backurl();
       return;
-    } 
+    }
 
     $useremail = \Drupal::currentUser()->getEmail();
 
@@ -210,8 +216,8 @@ class EditStudyObjectForm extends FormBase {
     if ($this->getStudyObject() != NULL &&
         $this->getStudyObject()->isMemberOf != NULL &&
         $this->getStudyObject()->isMemberOf->uri != NULL) {
-        $socUri = $this->getStudyObject()->isMemberOf->uri; 
-    } 
+        $socUri = $this->getStudyObject()->isMemberOf->uri;
+    }
 
     $studyObjectJSON = '{"uri":"'. $this->getStudyObject()->uri .'",'.
         '"typeUri":"'.$entityUri.'",'.
@@ -249,6 +255,6 @@ class EditStudyObjectForm extends FormBase {
       return;
     }
   }
-  
+
 
 }
