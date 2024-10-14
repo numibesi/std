@@ -20,7 +20,7 @@ class EditStudyForm extends FormBase {
   }
 
   public function setStudyUri($uri) {
-    return $this->studyUri = $uri; 
+    return $this->studyUri = $uri;
   }
 
   public function getStudy() {
@@ -28,7 +28,7 @@ class EditStudyForm extends FormBase {
   }
 
   public function setStudy($sem) {
-    return $this->study = $sem; 
+    return $this->study = $sem;
   }
 
   /**
@@ -75,11 +75,17 @@ class EditStudyForm extends FormBase {
       '#type' => 'submit',
       '#value' => $this->t('Update'),
       '#name' => 'save',
+      '#attributes' => [
+        'class' => ['btn', 'btn-primary', 'save-button'],
+      ],
     ];
     $form['cancel_submit'] = [
       '#type' => 'submit',
       '#value' => $this->t('Cancel'),
       '#name' => 'back',
+      '#attributes' => [
+        'class' => ['btn', 'btn-primary', 'cancel-button'],
+      ],
     ];
     $form['bottom_space'] = [
       '#type' => 'item',
@@ -115,7 +121,7 @@ class EditStudyForm extends FormBase {
     if ($button_name === 'back') {
       self::backUrl();
       return;
-    } 
+    }
 
     $useremail = \Drupal::currentUser()->getEmail();
 
@@ -132,7 +138,7 @@ class EditStudyForm extends FormBase {
       $api = \Drupal::service('rep.api_connector');
       $api->studyDel($this->getStudy()->uri);
       $api->studyAdd($studyJson);
-    
+
       \Drupal::messenger()->addMessage(t("Study has been updated successfully."));
       self::backUrl();
       return;
@@ -154,5 +160,5 @@ class EditStudyForm extends FormBase {
       return;
     }
   }
-  
+
 }

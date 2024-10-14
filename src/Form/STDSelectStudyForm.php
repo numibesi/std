@@ -41,7 +41,7 @@ class STDSelectStudyForm extends FormBase {
   }
 
   public function setList($list) {
-    return $this->list = $list; 
+    return $this->list = $list;
   }
 
   public function getListSize() {
@@ -49,7 +49,7 @@ class STDSelectStudyForm extends FormBase {
   }
 
   public function setListSize($list_size) {
-    return $this->list_size = $list_size; 
+    return $this->list_size = $list_size;
   }
 
   /**
@@ -71,7 +71,7 @@ class STDSelectStudyForm extends FormBase {
     }
     if (gettype($this->list_size) == 'string') {
         $total_pages = "0";
-    } else { 
+    } else {
         if ($this->list_size % $pagesize == 0) {
             $total_pages = $this->list_size / $pagesize;
         } else {
@@ -103,7 +103,7 @@ class STDSelectStudyForm extends FormBase {
         $this->single_class_name = "Study";
         $this->plural_class_name = "Studies";
         $header = Study::generateHeader();
-        $output = Study::generateOutputAsCard($this->getList()); 
+        $output = Study::generateOutputAsCard($this->getList());
         break;
       default:
         $this->single_class_name = "Object of Unknown Type";
@@ -123,6 +123,9 @@ class STDSelectStudyForm extends FormBase {
         '#type' => 'submit',
         '#value' => $this->t('Add New ' . $this->single_class_name),
         '#name' => 'add_element',
+        '#attributes' => [
+          'class' => ['btn', 'btn-primary', 'add-element-button'],
+        ],
     ];
     $form['space1'] = [
       '#type' => 'item',
@@ -142,10 +145,10 @@ class STDSelectStudyForm extends FormBase {
         $indexCard = 0;
         foreach ($row as $uri => $card) {
             $indexCard++;
-            $form['row_' . $index]['element_' . $indexCard] = $card;     
+            $form['row_' . $index]['element_' . $indexCard] = $card;
         }
     }
-    
+
     $form['pager'] = [
       '#theme' => 'list-page',
       '#items' => [
@@ -163,6 +166,9 @@ class STDSelectStudyForm extends FormBase {
         '#type' => 'submit',
         '#value' => $this->t('Back'),
         '#name' => 'back',
+        '#attributes' => [
+          'class' => ['btn', 'btn-primary', 'back-button'],
+        ],
     ];
     $form['space2'] = [
         '#type' => 'item',
@@ -174,17 +180,17 @@ class STDSelectStudyForm extends FormBase {
 
   /**
    * {@inheritdoc}
-   */   
+   */
   public function submitForm(array &$form, FormStateInterface $form_state) {
 
     // RETRIEVE TRIGGERING BUTTON
     $triggering_element = $form_state->getTriggeringElement();
     $button_name = $triggering_element['#name'];
-  
+
     // SET USER ID AND PREVIOUS URL FOR TRACKING STORE URLS
     $uid = \Drupal::currentUser()->id();
     $previousUrl = \Drupal::request()->getRequestUri();
-        
+
     // RETRIEVE SELECTED ROWS, IF ANY
     $selected_rows = $form_state->getValue('element_table');
     $rows = [];
@@ -201,21 +207,21 @@ class STDSelectStudyForm extends FormBase {
         Utils::trackingStoreUrls($uid, $previousUrl, 'std.add_study');
         $url = Url::fromRoute('std.add_study');
       $form_state->setRedirectUrl($url);
-    }  
+    }
 
     if ($button_name === 'back') {
       $url = Url::fromRoute('std.search');
       $form_state->setRedirectUrl($url);
-    }  
+    }
 
   }
 
   /**
    * {@inheritdoc}
-   */   
+   */
   public static function backSelect($elementType) {
     $url = Url::fromRoute('rep.home');
     return $url;
   }
-  
+
 }

@@ -27,7 +27,7 @@ class AddStudyRoleForm extends FormBase {
   }
 
   public function setStudyUri($studyUri) {
-    return $this->studyUri = $studyUri; 
+    return $this->studyUri = $studyUri;
   }
 
   public function getStudy() {
@@ -35,7 +35,7 @@ class AddStudyRoleForm extends FormBase {
   }
 
   public function setStudy($study) {
-    return $this->study = $study; 
+    return $this->study = $study;
   }
 
   /**
@@ -85,7 +85,7 @@ class AddStudyRoleForm extends FormBase {
         '#autocomplete_route_name' => 'std.study_autocomplete',
       ];
     }
-    
+
     $form['studyrole_name'] = [
       '#type' => 'textfield',
       '#title' => $this->t('Name'),
@@ -100,12 +100,18 @@ class AddStudyRoleForm extends FormBase {
       '#type' => 'submit',
       '#value' => $this->t('Save'),
       '#name' => 'save',
+      '#attributes' => [
+        'class' => ['btn', 'btn-primary', 'save-button'],
+      ],
     ];
 
     $form['cancel_submit'] = [
       '#type' => 'submit',
       '#value' => $this->t('Cancel'),
       '#name' => 'back',
+      '#attributes' => [
+        'class' => ['btn', 'btn-primary', 'cancel-button'],
+      ],
     ];
 
     $form['bottom_space'] = [
@@ -142,14 +148,14 @@ class AddStudyRoleForm extends FormBase {
     if ($button_name === 'back') {
       self::backUrl();
       return;
-    } 
+    }
 
     $useremail = \Drupal::currentUser()->getEmail();
 
     $studyUri = 'null';
     if ($form_state->getValue('studyrole_study') != NULL && $form_state->getValue('studyrole_study') != '') {
       $studyUri = Utils::uriFromAutocomplete($form_state->getValue('studyrole_study'));
-    } 
+    }
 
     $newStudyRoleUri = Utils::uriGen('studyrole');
     $studyJSON = '{"uri":"'. $newStudyRoleUri .'",'.
@@ -186,6 +192,6 @@ class AddStudyRoleForm extends FormBase {
       return;
     }
   }
-  
+
 
 }

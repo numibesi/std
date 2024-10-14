@@ -20,7 +20,7 @@ class EditVirtualColumnForm extends FormBase {
   }
 
   public function setVirtualColumnUri($uri) {
-    return $this->virtualColumnUri = $uri; 
+    return $this->virtualColumnUri = $uri;
   }
 
   public function getVirtualColumn() {
@@ -28,7 +28,7 @@ class EditVirtualColumnForm extends FormBase {
   }
 
   public function setVirtualColumn($vc) {
-    return $this->virtualColumn = $vc; 
+    return $this->virtualColumn = $vc;
   }
 
   /**
@@ -56,7 +56,7 @@ class EditVirtualColumnForm extends FormBase {
       $this->setVirtualColumn($virtualColumn);
       //dpm($virtualColumn);
     }
-    
+
     $study = ' ';
     if ($this->getVirtualColumn()->isMemberOf != NULL &&
         $this->getVirtualColumn()->isMemberOf->uri != NULL &&
@@ -78,7 +78,7 @@ class EditVirtualColumnForm extends FormBase {
         '#default_value' => $study,
         '#autocomplete_route_name' => 'std.study_autocomplete',
       ];
-    }    
+    }
     $form['virtualcolumn_soc_reference'] = [
       '#type' => 'textfield',
       '#title' => $this->t("SOC Reference (must starts with '??')"),
@@ -93,11 +93,17 @@ class EditVirtualColumnForm extends FormBase {
       '#type' => 'submit',
       '#value' => $this->t('Update'),
       '#name' => 'save',
+      '#attributes' => [
+        'class' => ['btn', 'btn-primary', 'save-button'],
+      ],
     ];
     $form['cancel_submit'] = [
       '#type' => 'submit',
       '#value' => $this->t('Cancel'),
       '#name' => 'back',
+      '#attributes' => [
+        'class' => ['btn', 'btn-primary', 'cancel-button'],
+      ],
     ];
     $form['bottom_space'] = [
       '#type' => 'item',
@@ -132,21 +138,21 @@ class EditVirtualColumnForm extends FormBase {
     if ($button_name === 'back') {
       self::backUrl();
       return;
-    } 
+    }
 
     $useremail = \Drupal::currentUser()->getEmail();
 
     $studyUri = 'null';
     if ($form_state->getValue('virtualcolumn_study') != NULL && $form_state->getValue('virtualcolumn_study') != '') {
       $studyUri = Utils::uriFromAutocomplete($form_state->getValue('virtualcolumn_study'));
-    } 
+    }
 
     $virtualColumnJSON = '{"uri":"'. $this->getVirtualColumn()->uri .'",'.
       '"typeUri":"'.HASCO::VIRTUAL_COLUMN.'",'.
       '"hascoTypeUri":"'.HASCO::VIRTUAL_COLUMN.'",'.
       '"label":"'.$form_state->getValue('virtualcolumn_soc_reference').'",'.
       '"socreference":"'.$form_state->getValue('virtualcolumn_soc_reference').'",'.
-      '"isMemberOfUri":"' . $studyUri . '",' . 
+      '"isMemberOfUri":"' . $studyUri . '",' .
       '"groundingLabel":"'.$form_state->getValue('virtualcolumn_groundinglabel').'",'.
       '"hasSIRManagerEmail":"'.$useremail.'"}';
 
@@ -156,7 +162,7 @@ class EditVirtualColumnForm extends FormBase {
       $api = \Drupal::service('rep.api_connector');
       $api->virtualColumnDel($this->getVirtualColumn()->uri);
       $api->virtualColumnAdd($virtualColumnJSON);
-    
+
       \Drupal::messenger()->addMessage(t("Virtual column has been updated successfully."));
       self::backUrl();
       return;

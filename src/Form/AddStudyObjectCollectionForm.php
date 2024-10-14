@@ -20,7 +20,7 @@ class AddStudyObjectCollectionForm extends FormBase {
   }
 
   public function setStudyUri($studyUri) {
-    return $this->studyUri = $studyUri; 
+    return $this->studyUri = $studyUri;
   }
 
   public function getStudy() {
@@ -28,7 +28,7 @@ class AddStudyObjectCollectionForm extends FormBase {
   }
 
   public function setStudy($study) {
-    return $this->study = $study; 
+    return $this->study = $study;
   }
 
   /**
@@ -44,7 +44,7 @@ class AddStudyObjectCollectionForm extends FormBase {
   public function buildForm(array $form, FormStateInterface $form_state, $studyuri = NULL, $fixstd = NULL) {
 
     $api = \Drupal::service('rep.api_connector');
-      
+
     // HANDLE STUDYURI AND STUDY, IF ANY
     if ($studyuri != NULL) {
       if ($studyuri == 'none') {
@@ -107,7 +107,7 @@ class AddStudyObjectCollectionForm extends FormBase {
         '#autocomplete_route_name' => 'std.study_autocomplete',
       ];
     }
-    
+
     $form['soc_virtualcolumn'] = [
       '#type' => 'select',
       '#title' => $this->t('Virtual Column'),
@@ -141,11 +141,17 @@ class AddStudyObjectCollectionForm extends FormBase {
       '#type' => 'submit',
       '#value' => $this->t('Save'),
       '#name' => 'save',
+      '#attributes' => [
+        'class' => ['btn', 'btn-primary', 'save-button'],
+      ],
     ];
     $form['cancel_submit'] = [
       '#type' => 'submit',
       '#value' => $this->t('Cancel'),
       '#name' => 'back',
+      '#attributes' => [
+        'class' => ['btn', 'btn-primary', 'cancel-button'],
+      ],
     ];
     $form['bottom_space'] = [
       '#type' => 'item',
@@ -185,14 +191,14 @@ class AddStudyObjectCollectionForm extends FormBase {
     if ($button_name === 'back') {
       self::backUrl();
       return;
-    } 
+    }
 
     $useremail = \Drupal::currentUser()->getEmail();
 
     $studyUri = NULL;
     if ($form_state->getValue('soc_study') != NULL && $form_state->getValue('soc_study') != '') {
       $studyUri = Utils::uriFromAutocomplete($form_state->getValue('soc_study'));
-    } 
+    }
 
     if ($studyUri == NULL) {
       \Drupal::messenger()->addError(t("An error occurred while adding a study object collection: could not find valid URI for study."));
@@ -206,7 +212,7 @@ class AddStudyObjectCollectionForm extends FormBase {
       //$vcUri = Utils::uriFromAutocomplete($form_state->getValue('soc_virtualcolumn'));
       $vcUri = $form_state->getValue('soc_virtualcolumn');
       //dpm($vcUri);
-    } 
+    }
 
     if ($vcUri == NULL) {
       \Drupal::messenger()->addError(t("An error occurred while adding a study object collection: could not find valid URI for its virtual column."));

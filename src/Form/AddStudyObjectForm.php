@@ -18,7 +18,7 @@ class AddStudyObjectForm extends FormBase {
   }
 
   public function setStudyObjectCollection($studyObjectCollection) {
-    return $this->studyObjectCollection = $studyObjectCollection; 
+    return $this->studyObjectCollection = $studyObjectCollection;
   }
 
   /**
@@ -48,9 +48,9 @@ class AddStudyObjectForm extends FormBase {
       \Drupal::messenger()->addError(t("Could not retrieve SOC with uri=".$uri));
       self::backurl();
       return;
-    } 
+    }
     $this->setStudyObjectCollection($studyObjectCollection);
-    
+
     $study = ' ';
     if ($this->getStudyObjectCollection() != NULL &&
         $this->getStudyObjectCollection()->isMemberOf != NULL &&
@@ -118,11 +118,17 @@ class AddStudyObjectForm extends FormBase {
       '#type' => 'submit',
       '#value' => $this->t('Save'),
       '#name' => 'save',
+      '#attributes' => [
+        'class' => ['btn', 'btn-primary', 'save-button'],
+      ],
     ];
     $form['cancel_submit'] = [
       '#type' => 'submit',
       '#value' => $this->t('Cancel'),
       '#name' => 'back',
+      '#attributes' => [
+        'class' => ['btn', 'btn-primary', 'cancel-button'],
+      ],
     ];
     $form['bottom_space'] = [
       '#type' => 'item',
@@ -158,7 +164,7 @@ class AddStudyObjectForm extends FormBase {
     if ($button_name === 'back') {
       self::backurl();
       return;
-    } 
+    }
 
     $useremail = \Drupal::currentUser()->getEmail();
 
@@ -167,12 +173,12 @@ class AddStudyObjectForm extends FormBase {
       $entityUri = Utils::uriFromAutocomplete(HASCO::STUDY_OBJECT);
     } else {
       $entityUri = Utils::uriFromAutocomplete($form_state->getValue('studyobject_entity'));
-    } 
+    }
 
     $socUri = NULL;
     if ($this->getStudyObjectCollection() != NULL) {
-      $socUri = $this->getStudyObjectCollection()->uri; 
-    } 
+      $socUri = $this->getStudyObjectCollection()->uri;
+    }
 
     $newStudyObjectUri = Utils::uriGen('studyobject');
     $studyObjectJSON = '{"uri":"'. $newStudyObjectUri .'",'.
@@ -210,7 +216,7 @@ class AddStudyObjectForm extends FormBase {
       return;
     }
   }
-  
+
 
 
 }

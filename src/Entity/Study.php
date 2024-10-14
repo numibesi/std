@@ -5,6 +5,7 @@ namespace Drupal\std\Entity;
 use Drupal\Core\Url;
 use Drupal\rep\Vocabulary\REPGUI;
 use Drupal\rep\Utils;
+use Drupal\Core\Render\Markup;
 
 class Study {
 
@@ -18,7 +19,7 @@ class Study {
       'element_n_vcs' => t('# Virt.Columns'),
       'element_n_socs' => t('# SOCs'),
     ];
-  
+
   }
 
   public static function generateOutput($list) {
@@ -47,8 +48,8 @@ class Study {
       $root_url = \Drupal::request()->getBaseUrl();
       $encodedUri = rawurlencode(rawurlencode($element->uri));
       $output[$element->uri] = [
-        'element_uri' => t('<a href="'.$root_url.REPGUI::DESCRIBE_PAGE.base64_encode($uri).'">'.$uri.'</a>'),     
-        'element_short_name' => t($label),    
+        'element_uri' => t('<a href="'.$root_url.REPGUI::DESCRIBE_PAGE.base64_encode($uri).'">'.$uri.'</a>'),
+        'element_short_name' => t($label),
         'element_name' => t($title),
         'element_n_roles' => $element->totalStudyRoles,
         'element_n_vcs' => $element->totalVirtualColumns,
@@ -74,7 +75,7 @@ class Study {
 
     $index = 0;
     foreach ($list as $element) {
-      $index++; 
+      $index++;
       $uri = $element->uri ?? '';
       $label = $element->label ?? '';
       $title = $element->title ?? '';
@@ -83,7 +84,7 @@ class Study {
 
       if (isset($urlComponents['scheme']) && isset($urlComponents['host'])) {
         $url = Url::fromUri($uri);
-      } else { 
+      } else {
         $url = '';
       }
 
@@ -125,7 +126,7 @@ class Study {
             'class' => ['card', 'mb-3'],
         ],
         '#prefix' => '<div class="col-md-6">',
-        '#suffix' => '</div>', 
+        '#suffix' => '</div>',
         'card_body_'.$index => [
             '#type' => 'container', // Use container for the card body
             '#attributes' => [
@@ -139,8 +140,8 @@ class Study {
             ],
             'link1_'.$index   => [
               '#type' => 'link',
-              '#title' => 'Manage Elements',
-              '#url' => $manage_elements, 
+              '#title' => Markup::create('<i class="fa-solid fa-folder-tree"></i> Manage Elements'),
+              '#url' => $manage_elements,
               '#attributes' => [
                   'class' => ['btn', 'btn-sm', 'btn-secondary'],
                   'style' => 'margin-right: 10px;',
@@ -148,8 +149,8 @@ class Study {
             ],
             'link2_'.$index => [
               '#type' => 'link',
-              '#title' => 'View',
-              '#url' => $view_study, 
+              '#title' => Markup::create('<i class="fa-solid fa-eye"></i> View'),
+              '#url' => $view_study,
               '#attributes' => [
                   'class' => ['btn', 'btn-sm', 'btn-secondary'],
                   'style' => 'margin-right: 10px;',
@@ -157,8 +158,8 @@ class Study {
             ],
             'link3_'.$index => [
               '#type' => 'link',
-              '#title' => 'Edit',
-              '#url' => $edit_study, 
+              '#title' => Markup::create('<i class="fa-solid fa-pen-to-square"></i> Edit'),
+              '#url' => $edit_study,
               '#attributes' => [
                   'class' => ['btn', 'btn-sm', 'btn-secondary'],
                   'style' => 'margin-right: 10px;',
@@ -166,16 +167,16 @@ class Study {
             ],
             'link4_'.$index => [
               '#type' => 'link',
-              '#title' => 'Delete',
-              '#url' => $delete_study, 
+              '#title' => Markup::create('<i class="fa-solid fa-trash-can"></i> Delete'),
+              '#url' => $delete_study,
               '#attributes' => [
                 'onclick' => 'if(!confirm("Really Delete?")){return false;}',
-                'class' => ['btn', 'btn-sm', 'btn-secondary'],
+                'class' => ['btn', 'btn-sm', 'btn-secondary', 'btn-danger'],
               ],
             ],
         ],
       ];
-    
+
     }
 
     return $output;

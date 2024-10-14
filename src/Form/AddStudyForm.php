@@ -27,7 +27,7 @@ class AddStudyForm extends FormBase {
    * {@inheritdoc}
    */
   public function buildForm(array $form, FormStateInterface $form_state) {
-    
+
     //dpm($form_state->getValue('study_pi'));
 
     $form['study_short_name'] = [
@@ -54,12 +54,18 @@ class AddStudyForm extends FormBase {
       '#type' => 'submit',
       '#value' => $this->t('Save'),
       '#name' => 'save',
+      '#attributes' => [
+        'class' => ['btn', 'btn-primary', 'save-button'],
+      ],
     ];
 
     $form['cancel_submit'] = [
       '#type' => 'submit',
       '#value' => $this->t('Cancel'),
       '#name' => 'back',
+      '#attributes' => [
+        'class' => ['btn', 'btn-primary', 'cancel-button'],
+      ],
     ];
 
     $form['bottom_space'] = [
@@ -96,7 +102,7 @@ class AddStudyForm extends FormBase {
     if ($button_name === 'back') {
       self::backUrl();
       return;
-    } 
+    }
 
     if ($button_name === 'save') {
       $useremail = \Drupal::currentUser()->getEmail();
@@ -139,7 +145,7 @@ class AddStudyForm extends FormBase {
       return;
     }
   }
-  
+
 
 
 }

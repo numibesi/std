@@ -21,7 +21,7 @@ class ViewStudyObjectForm extends FormBase {
   }
 
   public function setStudyObjectCollection($studyObjectCollection) {
-    return $this->studyObjectCollection = $studyObjectCollection; 
+    return $this->studyObjectCollection = $studyObjectCollection;
   }
 
   /**
@@ -46,7 +46,7 @@ class ViewStudyObjectForm extends FormBase {
     $api = \Drupal::service('rep.api_connector');
     $studyObjectCollection = $api->parseObjectResponse($api->getUri($uri),'getUri');
     $this->setStudyObjectCollection($studyObjectCollection);
-    
+
     // RETRIEVE STUDY OBJECT BY STUDY OBJECT COLLECTION
     $sos = $api->parseObjectResponse($api->studyObjectsBySOCWithPage($this->getStudyObjectCollection()->uri,12,0),'studyObjectsBySOCWithPage');
 
@@ -80,9 +80,9 @@ class ViewStudyObjectForm extends FormBase {
         }
 
         $output[$so->uri] = [
-          'so_uri' => t('<a href="'.$root_url.REPGUI::DESCRIBE_PAGE.base64_encode($so->uri).'">'.$nsUri.'</a>'),     
-          'so_original_id' => $so->originalId,     
-          'so_entity' => $so->typeLabel,     
+          'so_uri' => t('<a href="'.$root_url.REPGUI::DESCRIBE_PAGE.base64_encode($so->uri).'">'.$nsUri.'</a>'),
+          'so_original_id' => $so->originalId,
+          'so_entity' => $so->typeLabel,
         ];
       }
     }
@@ -108,6 +108,9 @@ class ViewStudyObjectForm extends FormBase {
       '#type' => 'submit',
       '#value' => $this->t('Back'),
       '#name' => 'back',
+      '#attributes' => [
+        'class' => ['btn', 'btn-primary', 'back-button'],
+      ],
     ];
     $form['bottom_space'] = [
       '#type' => 'item',
@@ -125,7 +128,7 @@ class ViewStudyObjectForm extends FormBase {
 
   /**
    * {@inheritdoc}
-   */   
+   */
   public function submitForm(array &$form, FormStateInterface $form_state) {
 
     // RETRIEVE TRIGGERING BUTTON
@@ -135,9 +138,9 @@ class ViewStudyObjectForm extends FormBase {
     // BACK TO MAIN PAGE
     if ($button_name === 'back') {
       $url = Url::fromRoute('rep.describe_element', ['elementuri' => base64_encode($this->getStudyObjectCollection()->isMemberOf->uri)]);
-      $form_state->setRedirectUrl($url);  
+      $form_state->setRedirectUrl($url);
       return;
-    }  
+    }
   }
-  
+
 }
