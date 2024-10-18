@@ -185,7 +185,7 @@ class STDSelectByStudyForm extends FormBase {
     // PUT FORM TOGETHER
     $form['page_title'] = [
       '#type' => 'item',
-      '#title' => $this->t('<h3>Manage ' . $this->plural_class_name . '</h3>'),
+      '#title' => $this->t('<h3 class="mt-5">Manage ' . $this->plural_class_name . '</h3>'),
     ];
     $form['page_study_context'] = [
       '#type' => 'item',
