@@ -1,5 +1,5 @@
 {
-    "name": "drupalmodules/std",
+    "name": "hasco/std",
     "description": "STD module to integrate with Drupal",
     "type": "drupal-module",
     "require": {
