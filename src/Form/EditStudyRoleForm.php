@@ -20,7 +20,7 @@ class EditStudyRoleForm extends FormBase {
   }
 
   public function setStudyRoleUri($uri) {
-    return $this->studyRoleUri = $uri; 
+    return $this->studyRoleUri = $uri;
   }
 
   public function getStudyRole() {
@@ -28,7 +28,7 @@ class EditStudyRoleForm extends FormBase {
   }
 
   public function setStudyRole($role) {
-    return $this->studyRole = $role; 
+    return $this->studyRole = $role;
   }
 
   /**
@@ -55,7 +55,7 @@ class EditStudyRoleForm extends FormBase {
     } else {
       $this->setStudyRole($studyRole);
     }
-    
+
     $study = ' ';
     if ($this->getStudyRole()->isMemberOf != NULL &&
         $this->getStudyRole()->isMemberOf->uri != NULL &&
@@ -77,7 +77,7 @@ class EditStudyRoleForm extends FormBase {
         '#default_value' => $study,
         '#autocomplete_route_name' => 'std.study_autocomplete',
       ];
-    }    
+    }
     $form['studyrole_name'] = [
       '#type' => 'textfield',
       '#title' => $this->t('Long Name'),
@@ -92,11 +92,17 @@ class EditStudyRoleForm extends FormBase {
       '#type' => 'submit',
       '#value' => $this->t('Update'),
       '#name' => 'save',
+      '#attributes' => [
+        'class' => ['btn', 'btn-primary', 'save-button'],
+      ],
     ];
     $form['cancel_submit'] = [
       '#type' => 'submit',
       '#value' => $this->t('Cancel'),
       '#name' => 'back',
+      '#attributes' => [
+        'class' => ['btn', 'btn-primary', 'cancel-button'],
+      ],
     ];
     $form['bottom_space'] = [
       '#type' => 'item',
@@ -131,14 +137,14 @@ class EditStudyRoleForm extends FormBase {
     if ($button_name === 'back') {
       self::backUrl();
       return;
-    } 
+    }
 
     $useremail = \Drupal::currentUser()->getEmail();
 
     $studyUri = 'null';
     if ($form_state->getValue('studyrole_study') != NULL && $form_state->getValue('studyrole_study') != '') {
       $studyUri = Utils::uriFromAutocomplete($form_state->getValue('studyrole_study'));
-    } 
+    }
 
     $studyRoleJSON = '{"uri":"'. $this->getStudyRole()->uri .'",'.
         '"typeUri":"'.HASCO::STUDY_ROLE.'",'.
@@ -153,7 +159,7 @@ class EditStudyRoleForm extends FormBase {
       $api = \Drupal::service('rep.api_connector');
       $api->studyRoleDel($this->getStudyRole()->uri);
       $api->studyRoleAdd($studyRoleJSON);
-    
+
       \Drupal::messenger()->addMessage(t("Study Role has been updated successfully."));
       self::backUrl();
       return;
@@ -175,5 +181,5 @@ class EditStudyRoleForm extends FormBase {
       return;
     }
   }
-  
+
 }

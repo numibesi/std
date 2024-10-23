@@ -12,12 +12,12 @@ use Drupal\views\ViewEntityInterface;
 /**
  * Implements hook_theme
  */
-function std_theme($existing, $type, $theme, $path) 
+function std_theme($existing, $type, $theme, $path)
 {
     return [
         'list-page' => [
             'variables' => array(
-                'items' => array(          
+                'items' => array(
                     'offset' => '',
                     'first' => '',
                     'last' => '',
@@ -31,4 +31,10 @@ function std_theme($existing, $type, $theme, $path)
     ];
 }
 
-
+/**
+ * Implements hook_preprocess_HOOK() for block templates.
+ */
+function std_preprocess_block(&$variables) {
+  // Add the rep/rep_js_css library.
+  $attachments['#attached']['library'][] = 'rep/rep_js_css';
+}

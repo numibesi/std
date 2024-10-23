@@ -37,7 +37,7 @@ class ManageStudyObjectForm extends FormBase {
   }
 
   public function setList($list) {
-    return $this->list = $list; 
+    return $this->list = $list;
   }
 
   public function getListSize() {
@@ -45,7 +45,7 @@ class ManageStudyObjectForm extends FormBase {
   }
 
   public function setListSize($list_size) {
-    return $this->list_size = $list_size; 
+    return $this->list_size = $list_size;
   }
 
 
@@ -54,7 +54,7 @@ class ManageStudyObjectForm extends FormBase {
   }
 
   public function setStudyObjectCollection($studyObjectCollection) {
-    return $this->studyObjectCollection = $studyObjectCollection; 
+    return $this->studyObjectCollection = $studyObjectCollection;
   }
 
   /**
@@ -74,7 +74,7 @@ class ManageStudyObjectForm extends FormBase {
     $uid = \Drupal::currentUser()->id();
     $user = \Drupal\user\Entity\User::load($uid);
     $this->manager_name = $user->name->value;
-    
+
     // GET SOC
     $api = \Drupal::service('rep.api_connector');
     $decoded_socuri = base64_decode($socuri);
@@ -94,7 +94,7 @@ class ManageStudyObjectForm extends FormBase {
     }
     if (gettype($this->list_size) == 'string') {
       $total_pages = "0";
-    } else { 
+    } else {
       if ($this->list_size % $pagesize == 0) {
         $total_pages = $this->list_size / $pagesize;
       } else {
@@ -125,8 +125,8 @@ class ManageStudyObjectForm extends FormBase {
     $this->single_class_name = "Study Object";
     $this->plural_class_name = "Study Objects";
     $header = StudyObject::generateHeader();
-    $output = StudyObject::generateOutput($this->getList());    
-    
+    $output = StudyObject::generateOutput($this->getList());
+
     # PUT FORM TOGETHER
 
     $form['scope'] = [
@@ -145,19 +145,28 @@ class ManageStudyObjectForm extends FormBase {
       $form['add_so'] = [
         '#type' => 'submit',
         '#value' => $this->t("Add Study Object"),
-        '#name' => 'add_so',  
+        '#name' => 'add_so',
+        '#attributes' => [
+          'class' => ['btn', 'btn-primary', 'add-element-button'],
+        ],
       ];
     }
     $form['edit_so'] = [
       '#type' => 'submit',
       '#value' => $this->t("Edit Study Object"),
       '#name' => 'edit_so',
+      '#attributes' => [
+        'class' => ['btn', 'btn-primary', 'edit-element-button'],
+      ],
     ];
     $form['delete_so'] = [
       '#type' => 'submit',
       '#value' => $this->t('Delete Selected Study Objects'),
-      '#name' => 'delete_sos',    
-      '#attributes' => ['onclick' => 'if(!confirm("Really Delete?")){return false;}'],
+      '#name' => 'delete_sos',
+      '#attributes' => [
+        'onclick' => 'if(!confirm("Really Delete?")){return false;}',
+        'class' => ['btn', 'btn-primary', 'delete-button'],
+      ],
     ];
 
     $form['so_table'] = [
@@ -179,11 +188,14 @@ class ManageStudyObjectForm extends FormBase {
           'links' => null,
           'title' => ' ',
       ],
-    ];    
+    ];
     $form['submit'] = [
       '#type' => 'submit',
       '#value' => $this->t('Back to Study Object Collections'),
       '#name' => 'back',
+      '#attributes' => [
+        'class' => ['btn', 'btn-primary', 'back-button'],
+      ],
     ];
     $form['bottom_space'] = [
       '#type' => 'item',
@@ -201,7 +213,7 @@ class ManageStudyObjectForm extends FormBase {
 
   /**
    * {@inheritdoc}
-   */   
+   */
   public function submitForm(array &$form, FormStateInterface $form_state) {
 
     // RETRIEVE TRIGGERING BUTTON
@@ -238,16 +250,16 @@ class ManageStudyObjectForm extends FormBase {
     // EDIT STUDY OBJECT
     if ($button_name === 'edit_so') {
       if (sizeof($rows) < 1) {
-        \Drupal::messenger()->addWarning(t("Select a Study Object to be edited."));      
+        \Drupal::messenger()->addWarning(t("Select a Study Object to be edited."));
       } else if (sizeof($rows) > 1) {
-        \Drupal::messenger()->addWarning(t("Select one Study Object to be edited. No more than one Study Object can be edited at once."));      
+        \Drupal::messenger()->addWarning(t("Select one Study Object to be edited. No more than one Study Object can be edited at once."));
       } else {
         $first = array_shift($rows);
         Utils::trackingStoreUrls($uid, $previousUrl, 'std.edit_studyobject');
         $url = Url::fromRoute('std.edit_studyobject');
         $url->setRouteParameter('studyobjecturi', base64_encode($first));
-        $form_state->setRedirectUrl($url);  
-      } 
+        $form_state->setRedirectUrl($url);
+      }
       return;
     }
 
@@ -255,7 +267,7 @@ class ManageStudyObjectForm extends FormBase {
     if ($button_name === 'delete_sos') {
       if (sizeof($rows) < 1) {
         \Drupal::messenger()->addWarning(t("Select Study Objects to be deleted."));
-        return;      
+        return;
       } else {
         $api = \Drupal::service('rep.api_connector');
         //dpm($rows);
@@ -267,10 +279,10 @@ class ManageStudyObjectForm extends FormBase {
             \Drupal::messenger()->addError(t("An error occurred while deleting a Study Object: ".$e->getMessage()));
             self::backUrl();
             return;
-          }    
+          }
         }
         \Drupal::messenger()->addMessage(t("Study object(s) has been deleted successfully."));
-      } 
+      }
     }
 
   }
@@ -285,4 +297,4 @@ class ManageStudyObjectForm extends FormBase {
     }
   }
 
-}  
+}

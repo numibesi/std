@@ -20,7 +20,7 @@ class EditStudyObjectCollectionForm extends FormBase {
   }
 
   public function setStudyObjectCollectionUri($uri) {
-    return $this->studyObjectCollectionUri = $uri; 
+    return $this->studyObjectCollectionUri = $uri;
   }
 
   public function getStudyObjectCollection() {
@@ -28,7 +28,7 @@ class EditStudyObjectCollectionForm extends FormBase {
   }
 
   public function setStudyObjectCollection($soc) {
-    return $this->studyObjectCollection = $soc; 
+    return $this->studyObjectCollection = $soc;
   }
 
   /**
@@ -125,11 +125,17 @@ class EditStudyObjectCollectionForm extends FormBase {
       '#type' => 'submit',
       '#value' => $this->t('Update'),
       '#name' => 'save',
+      '#attributes' => [
+        'class' => ['btn', 'btn-primary', 'save-button'],
+      ],
     ];
     $form['cancel_submit'] = [
       '#type' => 'submit',
       '#value' => $this->t('Cancel'),
       '#name' => 'back',
+      '#attributes' => [
+        'class' => ['btn', 'btn-primary', 'cancel-button'],
+      ],
     ];
     $form['bottom_space'] = [
       '#type' => 'item',
@@ -164,14 +170,14 @@ class EditStudyObjectCollectionForm extends FormBase {
     if ($button_name === 'back') {
       self::backUrl();
       return;
-    } 
+    }
 
     $useremail = \Drupal::currentUser()->getEmail();
 
     $studyUri = NULL;
     if ($form_state->getValue('soc_study') != NULL && $form_state->getValue('soc_study') != '') {
       $studyUri = Utils::uriFromAutocomplete($form_state->getValue('soc_study'));
-    } 
+    }
 
     $studyObjectCollectionJSON = '{"uri":"'. $this->getStudyObjectCollection()->uri .'",'.
       '"typeUri":"'.HASCO::STUDY_OBJECT_COLLECTION.'",'.
@@ -187,7 +193,7 @@ class EditStudyObjectCollectionForm extends FormBase {
       $api = \Drupal::service('rep.api_connector');
       $api->studyObjectCollectionDel($this->getStudyObjectCollection()->uri);
       $api->studyObjectCollectionAdd($studyObjectCollectionJSON);
-    
+
       \Drupal::messenger()->addMessage(t("Study Object Collection has been updated successfully."));
       self::backUrl();
       return;

@@ -40,7 +40,7 @@ class STDPropertyForm extends FormBase {
   }
 
   public function setElement($element) {
-    return $this->element = $element; 
+    return $this->element = $element;
   }
 
   public function getProperty() {
@@ -48,7 +48,7 @@ class STDPropertyForm extends FormBase {
   }
 
   public function setProperty($property) {
-    return $this->property = $property; 
+    return $this->property = $property;
   }
 
   public function getElementType() {
@@ -56,7 +56,7 @@ class STDPropertyForm extends FormBase {
   }
 
   public function setElementType($elementType) {
-    return $this->elementType = $elementType; 
+    return $this->elementType = $elementType;
   }
 
   public function getList() {
@@ -64,7 +64,7 @@ class STDPropertyForm extends FormBase {
   }
 
   public function setList($list) {
-    return $this->list = $list; 
+    return $this->list = $list;
   }
 
   public function getListSize() {
@@ -72,7 +72,7 @@ class STDPropertyForm extends FormBase {
   }
 
   public function setListSize($list_size) {
-    return $this->list_size = $list_size; 
+    return $this->list_size = $list_size;
   }
 
   /**
@@ -108,14 +108,14 @@ class STDPropertyForm extends FormBase {
     }
     if (gettype($this->list_size) == 'string') {
       $total_pages = "0";
-    } else { 
+    } else {
       if ($this->list_size % $pagesize == 0) {
         $total_pages = $this->list_size / $pagesize;
       } else {
         $total_pages = floor($this->list_size / $pagesize) + 1;
       }
     }
-        
+
     // CREATE LINK FOR NEXT PAGE AND PREVIOUS PAGE
     if ($page < $total_pages) {
       $next_page = $page + 1;
@@ -180,23 +180,26 @@ class STDPropertyForm extends FormBase {
       '#type' => 'submit',
       '#value' => $this->t('Back'),
       '#name' => 'back',
+      '#attributes' => [
+        'class' => ['btn', 'btn-primary', 'back-button'],
+      ],
     ];
     $form['space'] = [
       '#type' => 'item',
       '#value' => $this->t('<br><br><br>'),
     ];
- 
+
     return $form;
   }
 
   /**
    * {@inheritdoc}
-   */   
+   */
   public function submitForm(array &$form, FormStateInterface $form_state) {
     // RETRIEVE TRIGGERING BUTTON
     $triggering_element = $form_state->getTriggeringElement();
     $button_name = $triggering_element['#name'];
-  
+
     // RETRIEVE SELECTED ROWS, IF ANY
     $selected_rows = $form_state->getValue('element_table');
     $rows = [];
@@ -209,13 +212,13 @@ class STDPropertyForm extends FormBase {
     // BACK TO MAIN PAGE
     if ($button_name === 'back') {
       $form_state->setRedirectUrl($this->backProperty($this->getElement()->uri));
-    }  
+    }
 
   }
 
   /**
    * {@inheritdoc}
-   */   
+   */
   public function backProperty($uri) {
     $url = Url::fromRoute('rep.describe_element');
     $url->setRouteParameter('elementuri', base64_encode($uri));
