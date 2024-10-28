@@ -61,16 +61,28 @@ class STDSelectStudyForm extends FormBase {
 
 
     // OBTÉM O EMAIL DO GERENTE
+    $form['#attached']['library'][] = 'std/std_js_css';
+
+    $form['#attached']['drupalSettings']['std_select_study_form']['ajaxUrl'] = Url::fromRoute('std.load_more_data')->toString();
+
+    $this->element_type = $elementtype ?? 'study'; // Valor padrão
+    $form['#attached']['drupalSettings']['std_select_study_form']['elementType'] = $this->element_type;
+
+
+    // OBTÉM O EMAIL DO GERENTE
     $this->manager_email = \Drupal::currentUser()->getEmail();
     $uid = \Drupal::currentUser()->id();
     $user = \Drupal\user\Entity\User::load($uid);
     $this->manager_name = $user->getDisplayName();
 
     // OBTÉM O TIPO DE ELEMENTO
+    // OBTÉM O TIPO DE ELEMENTO
     $this->element_type = $elementtype;
 
     // Tamanho de página padrão se não for fornecido
+    // Tamanho de página padrão se não for fornecido
     if ($pagesize === NULL) {
+      $pagesize = 9; // Carrega 9 itens por vez
       $pagesize = 9; // Carrega 9 itens por vez
     }
 
@@ -84,8 +96,10 @@ class STDSelectStudyForm extends FormBase {
     $form_state->set('view_type', $view_type);
 
     // Armazena o tamanho da página no estado do formulário para uso em callbacks AJAX
+    // Armazena o tamanho da página no estado do formulário para uso em callbacks AJAX
     $form_state->set('page_size', $pagesize);
 
+    // Determina os nomes de classe com base no tipo de elemento
     // Determina os nomes de classe com base no tipo de elemento
     $this->single_class_name = "";
     $this->plural_class_name = "";
@@ -100,6 +114,7 @@ class STDSelectStudyForm extends FormBase {
     }
 
     // MONTAR O FORMULÁRIO
+    // MONTAR O FORMULÁRIO
     $form['page_title'] = [
       '#type' => 'item',
       '#markup' => '<h3 class="mt-5">Manage ' . $this->plural_class_name . '</h3>',
@@ -113,6 +128,7 @@ class STDSelectStudyForm extends FormBase {
       ]),
     ];
 
+    // Adiciona botões de alternância de visualização
     // Adiciona botões de alternância de visualização
     $form['view_toggle'] = [
       '#type' => 'container',
@@ -162,6 +178,7 @@ class STDSelectStudyForm extends FormBase {
       ];
 
       // Inicializa a página atual
+      // Inicializa a página atual
       if ($form_state->get('page') === NULL) {
         if ($page === NULL) {
           $page = 1; // Começa de 1
@@ -204,8 +221,10 @@ class STDSelectStudyForm extends FormBase {
       ];
 
       // Constrói a visualização em cartões dentro do 'cards_wrapper'
+      // Constrói a visualização em cartões dentro do 'cards_wrapper'
       $this->buildCardView($form['cards_wrapper'], $form_state);
 
+      // Verifica se há mais itens para carregar
       // Verifica se há mais itens para carregar
       if ($total_items > $page * $pagesize) {
         // Adiciona um container Bootstrap para centralizar o botão
@@ -215,6 +234,22 @@ class STDSelectStudyForm extends FormBase {
             'class' => ['text-center', 'my-3'], // Centraliza o conteúdo e adiciona margem vertical
           ],
         ];
+
+        // // Adiciona o botão "Load More" dentro do container
+        // $form['load_more_wrapper']['load_more'] = [
+        //   '#type' => 'submit',
+        //   '#value' => $this->t('Load More'),
+        //   '#ajax' => [
+        //     'callback' => '::loadMoreCallback',
+        //     'wrapper' => 'cards-wrapper',
+        //     'method' => 'append',
+        //   ],
+        //   '#attributes' => [
+        //     'class' => ['btn', 'btn-primary', 'load-more-button'],
+        //     'style' => 'height: auto;', // Ajusta a altura ao conteúdo
+        //   ],
+        //   '#name' => 'load_more',
+        // ];
 
         // // Adiciona o botão "Load More" dentro do container
         // $form['load_more_wrapper']['load_more'] = [
@@ -702,6 +737,7 @@ class STDSelectStudyForm extends FormBase {
 
   /**
    * Manipulador de envio para alternar para a visualização em tabela.
+   * Manipulador de envio para alternar para a visualização em tabela.
    */
   public function viewTableSubmit(array &$form, FormStateInterface $form_state) {
     $form_state->set('view_type', 'table');
@@ -712,6 +748,7 @@ class STDSelectStudyForm extends FormBase {
   }
 
   /**
+   * Manipulador de envio para alternar para a visualização em cartões.
    * Manipulador de envio para alternar para a visualização em cartões.
    */
   public function viewCardSubmit(array &$form, FormStateInterface $form_state) {
@@ -728,13 +765,16 @@ class STDSelectStudyForm extends FormBase {
   public function submitForm(array &$form, FormStateInterface $form_state) {
 
     // RECUPERA O BOTÃO QUE DISPAROU O ENVIO
+    // RECUPERA O BOTÃO QUE DISPAROU O ENVIO
     $triggering_element = $form_state->getTriggeringElement();
     $button_name = $triggering_element['#name'];
 
     // DEFINE O ID DO USUÁRIO E A URL ANTERIOR PARA RASTREAMENTO
+    // DEFINE O ID DO USUÁRIO E A URL ANTERIOR PARA RASTREAMENTO
     $uid = \Drupal::currentUser()->id();
     $previousUrl = \Drupal::request()->getRequestUri();
 
+    // Lida com ações com base no nome do botão
     // Lida com ações com base no nome do botão
     if ($button_name === 'add_element') {
       Utils::trackingStoreUrls($uid, $previousUrl, 'std.add_study');
@@ -745,14 +785,17 @@ class STDSelectStudyForm extends FormBase {
       $form_state->setRedirectUrl($url);
     } elseif ($button_name === 'edit_element') {
       // Lida com a edição de elementos selecionados na visualização em tabela
+      // Lida com a edição de elementos selecionados na visualização em tabela
       $this->handleEditSelected($form_state);
     } elseif ($button_name === 'delete_element') {
+      // Lida com a exclusão de elementos selecionados na visualização em tabela
       // Lida com a exclusão de elementos selecionados na visualização em tabela
       $this->handleDeleteSelected($form_state);
     }
   }
 
   /**
+   * Executa a ação de edição.
    * Executa a ação de edição.
    */
   protected function performEdit($uri, FormStateInterface $form_state) {
@@ -780,6 +823,7 @@ class STDSelectStudyForm extends FormBase {
 
   /**
    * Executa a ação de exclusão.
+   * Executa a ação de exclusão.
    */
   protected function performDelete(array $uris, FormStateInterface $form_state) {
     $api = \Drupal::service('rep.api_connector');
@@ -787,6 +831,7 @@ class STDSelectStudyForm extends FormBase {
       $study = $api->parseObjectResponse($api->getUri($uri), 'getUri');
       if ($study != NULL && $study->hasDataFile != NULL) {
 
+        // EXCLUI O ARQUIVO
         // EXCLUI O ARQUIVO
         if (isset($study->hasDataFile->id)) {
           $file = \Drupal\file\Entity\File::load($study->hasDataFile->id);
@@ -796,6 +841,7 @@ class STDSelectStudyForm extends FormBase {
           }
         }
 
+        // EXCLUI O DATAFILE
         // EXCLUI O DATAFILE
         if (isset($study->hasDataFile->uri)) {
           $api->dataFileDel($study->hasDataFile->uri);
@@ -808,6 +854,7 @@ class STDSelectStudyForm extends FormBase {
   }
 
   /**
+   * Lida com a edição de elementos selecionados na visualização em tabela.
    * Lida com a edição de elementos selecionados na visualização em tabela.
    */
   protected function handleEditSelected(FormStateInterface $form_state) {
@@ -824,6 +871,7 @@ class STDSelectStudyForm extends FormBase {
   }
 
   /**
+   * Lida com a exclusão de elementos selecionados na visualização em tabela.
    * Lida com a exclusão de elementos selecionados na visualização em tabela.
    */
   protected function handleDeleteSelected(FormStateInterface $form_state) {
