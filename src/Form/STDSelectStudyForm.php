@@ -11,8 +11,7 @@ use Drupal\rep\ListManagerEmailPage;
 use Drupal\rep\Utils;
 use Drupal\rep\Vocabulary\REPGUI;
 use Drupal\Core\Ajax\AjaxResponse;
-use Drupal\Core\Ajax\AppendCommand;
-use Drupal\Core\Ajax\CssCommand;
+use Symfony\Component\HttpFoundation\JsonResponse;
 
 class STDSelectStudyForm extends FormBase {
 
@@ -66,7 +65,11 @@ class STDSelectStudyForm extends FormBase {
       $pagesize = 9; // Load 9 items at a time
     }
 
-    // Retrieve or set default view type
+    // Recupera o parâmetro 'items_loaded' da URL, se existir
+    $items_loaded = \Drupal::request()->query->get('items_loaded') ?? 0;
+    $form_state->set('items_loaded', $items_loaded);
+
+    // Recupera ou define o tipo de visualização padrão
     $session = \Drupal::request()->getSession();
     $view_type = $session->get('std_select_study_view_type', 'card');
     $form_state->set('view_type', $view_type);
@@ -151,21 +154,38 @@ class STDSelectStudyForm extends FormBase {
 
       // Initialize current page if not set
       if ($form_state->get('page') === NULL) {
-        $form_state->set('page', 1);
+        if ($page === NULL) {
+          $page = 1; // Começa de 1
+        }
+        $form_state->set('page', $page);
+      } else {
+        $page = $form_state->get('page');
       }
-      $page = $form_state->get('page');
 
-      // Add the JavaScript library for infinite scroll (ensure you have this library in your module)
-      $form['#attached']['library'][] = 'std/infinite_scroll';
+      // Storage page number and form state
+      $form_state->set('page', $page);
 
-      // Retrieve elements for the current page
+      $items_loaded = $form_state->get('items_loaded') ?? 0;
+      $total_pages_to_load = ceil($items_loaded / $pagesize);
+
+      // Carrega todas as páginas necessárias para restaurar o estado original
+      for ($i = 1; $i <= $total_pages_to_load; $i++) {
+        $additional_items = ListManagerEmailPage::exec($this->element_type, $this->manager_email, $i, $pagesize);
+        if ($i == 1) {
+          $this->setList($additional_items);
+        } else {
+          $this->list = array_merge($this->list, $additional_items);
+        }
+      }
+
+      // Recover elements for current page
       $this->setList(ListManagerEmailPage::exec($this->element_type, $this->manager_email, $page, $pagesize));
 
-      // Get total number of items
+      // Get total items value
       $this->setListSize(ListManagerEmailPage::total($this->element_type, $this->manager_email));
       $total_items = $this->getListSize();
 
-      // Wrap cards in a container for AJAX
+      // Envolve ajax cards on a container
       $form['cards_wrapper'] = [
         '#type' => 'container',
         '#attributes' => ['id' => 'cards-wrapper'],
@@ -176,32 +196,28 @@ class STDSelectStudyForm extends FormBase {
 
       // Check if there are more items to load
       if ($total_items > $page * $pagesize) {
-        // Add the Load More button
-        $form['load_more'] = [
-          '#type' => 'button',
-          '#value' => $this->t('Load More'),
-          '#ajax' => [
-            'callback' => '::loadMoreCallback',
-            'wrapper' => 'cards-wrapper',
-            'method' => 'append',
-          ],
+        $form['load_more_wrapper'] = [
+          '#type' => 'container',
           '#attributes' => [
-            'class' => ['btn', 'btn-primary', 'load-more-button'],
+            'class' => ['text-center', 'my-3'],
           ],
-          '#name' => 'load_more',
         ];
       }
+
     } else {
-      // Initialize current page if not provided
+      // Initialize page 1
       if ($page === NULL) {
         $page = 1;
       }
 
-      // Build the table view
+      // Store page number and form status
+      $form_state->set('page', $page);
+
+      // Build table view
       $this->setList(ListManagerEmailPage::exec($this->element_type, $this->manager_email, $page, $pagesize));
       $this->buildTableView($form, $form_state);
 
-      // GET TOTAL NUMBER OF ELEMENTS AND TOTAL NUMBER OF PAGES
+      // Get total elements number and pages
       $this->setListSize(ListManagerEmailPage::total($this->element_type, $this->manager_email));
       $total_items = $this->getListSize();
 
@@ -211,7 +227,7 @@ class STDSelectStudyForm extends FormBase {
         $total_pages = floor($total_items / $pagesize) + 1;
       }
 
-      // CREATE LINK FOR NEXT PAGE AND PREVIOUS PAGE
+      // Next and Previous page links
       if ($page < $total_pages) {
         $next_page = $page + 1;
         $next_page_link = ListManagerEmailPage::link($this->element_type, $next_page, $pagesize);
@@ -225,7 +241,7 @@ class STDSelectStudyForm extends FormBase {
         $previous_page_link = '';
       }
 
-      // Add pager for table view
+      // Add pagination on bottom
       $form['pager'] = [
         '#theme' => 'list-page',
         '#items' => [
@@ -258,219 +274,225 @@ class STDSelectStudyForm extends FormBase {
   }
 
   /**
-   * Build the card view with header, content, footer, and working action links.
+   * Constroi visualização de Cards
    */
   protected function buildCardView(array &$form, FormStateInterface $form_state) {
-    // Get the list of items to display
+    // Get items list
     $items = $this->getList();
 
     $cards = [];
 
-    // Process each item to create a card
-    $index = 0;
-    foreach ($items as $element) {
-      $index++;
-      $uri = $element->uri ?? '';
-      $label = $element->label ?? '';
-      $title = $element->title ?? '';
-      $pi = $element->pi ?? '';
-      $ins = $element->institution ?? '';
-      $desc = $element->comment ?? '';
+    // Process each entry to build cards
+    foreach ($items as $index => $element) {
+        $uri = $element->uri ?? '';
+        $label = $element->label ?? '';
+        $title = $element->title ?? '';
+        $pi = $element->pi ?? '';
+        $ins = $element->institution ?? '';
+        $desc = $element->comment ?? '';
 
-      // Build the card array
-      $card = [
-        '#type' => 'container',
-        '#attributes' => ['class' => ['col-md-4']],
-      ];
+        // Build Card Array
+        $card = [
+            '#type' => 'container',
+            '#attributes' => ['class' => ['col-md-4'], 'id' => 'card-item-' . md5($uri)], // Adiciona um identificador único
+        ];
 
-      $card['card'] = [
-        '#type' => 'container',
-        '#attributes' => ['class' => ['card', 'mb-3']],
-      ];
+        $card['card'] = [
+            '#type' => 'container',
+            '#attributes' => ['class' => ['card', 'mb-3']],
+        ];
 
-      // Card header with 'short-Name'
-      $shortName = $label;
-      $card['card']['header'] = [
-        '#type' => 'container',
-        '#attributes' => [
-          'style' => 'margin-bottom:0!important;',
-          'class' => ['card-header']],
-        '#markup' => '<h5>' . $shortName . '</h5>',
-      ];
-
-      // Determine the image URI or use a placeholder
-      if (!empty($element->image)) {
-        $image_uri = $element->image;
-      } else {
-        // Use default placeholder image from the module
-        $image_uri = base_path() . \Drupal::service('extension.list.module')->getPath('rep') . '/images/std_placeholder.png';
-      }
-
-      // Create a hyperlink for the URI if it's valid
-      $uri = Utils::namespaceUri($uri);
-
-      // Build the card body with a 60%-40% layout
-      $card['card']['body'] = [
-        '#type' => 'container',
-        '#attributes' => [
-          'style' => 'margin-bottom:0!important;',
-          'class' => ['card-body', 'mb-0']],
-        'row' => [
-          '#type' => 'container',
-          '#attributes' => [
-            'style' => 'margin-bottom:0!important;',
-            'class' => ['row']],
-          'text_column' => [
+        // Card Header
+        $shortName = $label;
+        $card['card']['header'] = [
             '#type' => 'container',
             '#attributes' => [
-              'style' => 'margin-bottom:0!important;',
-              'class' => ['col-md-7']],
-            'text' => [
-              '#markup' => '<p class="card-text"><strong>Name:</strong> ' . $title
-                . '<br><strong>URI:</strong> ' . Link::fromTextAndUrl($uri, Url::fromUserInput(REPGUI::DESCRIBE_PAGE . base64_encode($uri)))->toString()
-                . '<br><strong>PI: </strong>' . $pi
-                . '<br><strong>Institution: </strong>' . $ins
-                . '<br><strong>Description: </strong>' . $desc . '</p>',
+                'style' => 'margin-bottom:0!important;',
+                'class' => ['card-header']
             ],
-          ],
-          'image_column' => [
+            '#markup' => '<h5>' . $shortName . '</h5>',
+        ];
+
+        // determine is the element has an image or should be presented a placeholder
+        if (!empty($element->image)) {
+            $image_uri = $element->image;
+        } else {
+            // module placeholder
+            $image_uri = base_path() . \Drupal::service('extension.list.module')->getPath('rep') . '/images/std_placeholder.png';
+        }
+
+        // Created URI
+        $uri = Utils::namespaceUri($uri);
+
+        // Card Body
+        $card['card']['body'] = [
             '#type' => 'container',
             '#attributes' => [
-              'style' => 'margin-bottom:0!important;',
-              'class' => ['col-md-5', 'text-center', 'mb-0', 'align-middle']],
-            'image' => [
-              '#theme' => 'image',
-              '#uri' => $image_uri,
-              '#alt' => $this->t('Image for @name', ['@name' => $title]),
-              '#attributes' => [
-                'style' => 'width: 70%',
-                'class' => ['img-fluid', 'mb-0'],
-              ],
+                'style' => 'margin-bottom:0!important;',
+                'class' => ['card-body', 'mb-0']
             ],
-          ],
-        ],
-      ];
+            'row' => [
+                '#type' => 'container',
+                '#attributes' => [
+                    'style' => 'margin-bottom:0!important;',
+                    'class' => ['row']
+                ],
+                'image_column' => [
+                    '#type' => 'container',
+                    '#attributes' => [
+                        'style' => 'margin-bottom:0!important;',
+                        'class' => ['col-md-5', 'text-center', 'mb-0', 'align-middle']
+                    ],
+                    'image' => [
+                        '#theme' => 'image',
+                        '#uri' => $image_uri,
+                        '#alt' => $this->t('Image for @name', ['@name' => $title]),
+                        '#attributes' => [
+                            'style' => 'width: 70%',
+                            'class' => ['img-fluid', 'mb-0'],
+                        ],
+                    ],
+                ],
+                'text_column' => [
+                    '#type' => 'container',
+                    '#attributes' => [
+                        'style' => 'margin-bottom:0!important;',
+                        'class' => ['col-md-7']
+                    ],
+                    'text' => [
+                        '#markup' => '<p class="card-text"><strong>Name:</strong> ' . $title
+                            . '<br><strong>URI:</strong> ' . Link::fromTextAndUrl($uri, Url::fromUserInput(REPGUI::DESCRIBE_PAGE . base64_encode($uri)))->toString()
+                            . '<br><strong>PI: </strong>' . $pi
+                            . '<br><strong>Institution: </strong>' . $ins
+                            . '<br><strong>Description: </strong>' . $desc . '</p>',
+                    ],
+                ],
+            ],
+        ];
 
-      // Build the action links
-      $previousUrl = base64_encode(\Drupal::request()->getRequestUri());
+        // Build action links
+        $previousUrl = base64_encode(\Drupal::request()->getRequestUri());
 
-      if ($element->uri != NULL && $element->uri != "") {
-        // Encode the study URI
-        $studyUriEncoded = base64_encode($element->uri);
+        if ($element->uri != NULL && $element->uri != "") {
+            // Change URI
+            $studyUriEncoded = base64_encode($element->uri);
 
-        // Manage Elements link
-        $manage_elements_str = base64_encode(Url::fromRoute('std.manage_study_elements', [
-          'studyuri' => $studyUriEncoded,
-        ])->toString());
+            // Management link
+            $manage_elements_str = base64_encode(Url::fromRoute('std.manage_study_elements', [
+                'studyuri' => $studyUriEncoded,
+            ])->toString());
 
-        $manage_elements = Url::fromRoute('rep.back_url', [
-          'previousurl' => $previousUrl,
-          'currenturl' => $manage_elements_str,
-          'currentroute' => 'std.manage_study_elements',
-        ]);
+            $manage_elements = Url::fromRoute('rep.back_url', [
+                'previousurl' => $previousUrl,
+                'currenturl' => $manage_elements_str,
+                'currentroute' => 'std.manage_study_elements',
+            ]);
 
-        // View link
-        $view_study_str = base64_encode(Url::fromRoute('rep.describe_element', [
-          'elementuri' => $studyUriEncoded,
-        ])->toString());
+            // View Link
+            $view_study_str = base64_encode(Url::fromRoute('rep.describe_element', [
+                'elementuri' => $studyUriEncoded,
+            ])->toString());
 
-        $view_study = Url::fromRoute('rep.back_url', [
-          'previousurl' => $previousUrl,
-          'currenturl' => $view_study_str,
-          'currentroute' => 'rep.describe_element',
-        ]);
+            $view_study = Url::fromRoute('rep.back_url', [
+                'previousurl' => $previousUrl,
+                'currenturl' => $view_study_str,
+                'currentroute' => 'rep.describe_element',
+            ]);
 
-        // Edit link
-        $edit_study_str = base64_encode(Url::fromRoute('std.edit_study', [
-          'studyuri' => $studyUriEncoded,
-        ])->toString());
+            // Edit link
+            $edit_study_str = base64_encode(Url::fromRoute('std.edit_study', [
+                'studyuri' => $studyUriEncoded,
+            ])->toString());
 
-        $edit_study = Url::fromRoute('rep.back_url', [
-          'previousurl' => $previousUrl,
-          'currenturl' => $edit_study_str,
-          'currentroute' => 'std.edit_study',
-        ]);
+            $edit_study = Url::fromRoute('rep.back_url', [
+                'previousurl' => $previousUrl,
+                'currenturl' => $edit_study_str,
+                'currentroute' => 'std.edit_study',
+            ]);
 
-        // Delete link
-        $delete_study = Url::fromRoute('rep.delete_element', [
-          'elementtype' => 'study',
-          'elementuri' => $studyUriEncoded,
-          'currenturl' => $previousUrl,
-        ]);
-      }
+            // Delete link
+            $delete_study = Url::fromRoute('rep.delete_element', [
+                'elementtype' => 'study',
+                'elementuri' => $studyUriEncoded,
+                'currenturl' => $previousUrl,
+            ]);
+        }
 
-      // Card footer with action links
-      $card['card']['footer'] = [
-        '#type' => 'container',
-        '#attributes' => [
-          'style' => 'margin-bottom:0!important;',
-          'class' => ['card-footer', 'text-right', 'd-flex', 'justify-content-end'],
-        ],
-        'actions' => [
-          'link1' => [
-            '#type' => 'link',
-            '#title' => Markup::create('<i class="fa-solid fa-folder-tree"></i> Manage Elements'),
-            '#url' => $manage_elements,
+        // Card footer
+        $card['card']['footer'] = [
+            '#type' => 'container',
             '#attributes' => [
-              'class' => ['btn', 'btn-sm', 'btn-secondary', 'mx-1'],
+                'style' => 'margin-bottom:0!important;',
+                'class' => ['card-footer', 'text-right', 'd-flex', 'justify-content-end'],
             ],
-          ],
-          'link2' => [
-            '#type' => 'link',
-            '#title' => Markup::create('<i class="fa-solid fa-eye"></i> View'),
-            '#url' => $view_study,
-            '#attributes' => [
-              'class' => ['btn', 'btn-sm', 'btn-secondary', 'mx-1'],
+            'actions' => [
+                'link1' => [
+                    '#type' => 'link',
+                    '#title' => Markup::create('<i class="fa-solid fa-folder-tree"></i> Manage Elements'),
+                    '#url' => $manage_elements,
+                    '#attributes' => [
+                        'class' => ['btn', 'btn-sm', 'btn-secondary', 'mx-1'],
+                    ],
+                ],
+                'link2' => [
+                    '#type' => 'link',
+                    '#title' => Markup::create('<i class="fa-solid fa-eye"></i> View'),
+                    '#url' => $view_study,
+                    '#attributes' => [
+                        'class' => ['btn', 'btn-sm', 'btn-secondary', 'mx-1'],
+                    ],
+                ],
+                'link3' => [
+                    '#type' => 'link',
+                    '#title' => Markup::create('<i class="fa-solid fa-pen-to-square"></i> Edit'),
+                    '#url' => $edit_study,
+                    '#attributes' => [
+                        'class' => ['btn', 'btn-sm', 'btn-secondary', 'mx-1'],
+                    ],
+                ],
+                'link4' => [
+                    '#type' => 'link',
+                    '#title' => Markup::create('<i class="fa-solid fa-trash-can"></i> Delete'),
+                    '#url' => $delete_study,
+                    '#attributes' => [
+                        'class' => ['btn', 'btn-sm', 'btn-danger', 'mx-1'],
+                        'onclick' => 'if(!confirm("Really Delete?")){return false;}',
+                    ],
+                ],
             ],
-          ],
-          'link3' => [
-            '#type' => 'link',
-            '#title' => Markup::create('<i class="fa-solid fa-pen-to-square"></i> Edit'),
-            '#url' => $edit_study,
-            '#attributes' => [
-              'class' => ['btn', 'btn-sm', 'btn-secondary', 'mx-1'],
-            ],
-          ],
-          'link4' => [
-            '#type' => 'link',
-            '#title' => Markup::create('<i class="fa-solid fa-trash-can"></i> Delete'),
-            '#url' => $delete_study,
-            '#attributes' => [
-              'class' => ['btn', 'btn-sm', 'btn-danger', 'mx-1'],
-              'onclick' => 'if(!confirm("Really Delete?")){return false;}',
-            ],
-          ],
-        ],
-      ];
+        ];
 
-      $cards[] = $card;
+        $cards[] = $card;
     }
 
-    // Now build the cards into the form
+    // Form cards
     $index = 0;
-    // Build cards in rows of 3
+    // 3 on each row
     foreach (array_chunk($cards, 3) as $row) {
-      $index++;
-      $form['row_' . $index] = [
-        '#type' => 'container',
-        '#attributes' => [
-          'style' => 'margin-bottom:0!important;',
-          'class' => ['row', 'mb-0'],
-        ],
-      ];
-      $indexCard = 0;
-      foreach ($row as $card) {
-        $indexCard++;
-        $form['row_' . $index]['element_' . $indexCard] = $card;
-      }
+        $index++;
+        if (!isset($form['row_' . $index])) {
+            $form['row_' . $index] = [
+                '#type' => 'container',
+                '#attributes' => [
+                    'style' => 'margin-bottom:0!important;',
+                    'class' => ['row', 'mb-0'],
+                ],
+            ];
+        }
+        $indexCard = 0;
+        foreach ($row as $card) {
+            $indexCard++;
+            $form['row_' . $index]['element_' . $indexCard] = $card;
+        }
     }
   }
 
+
   /**
-   * Build the table view with the specified columns and action buttons.
+   * Build Table View
    */
   protected function buildTableView(array &$form, FormStateInterface $form_state) {
-    // Define the table header
+    // Define o cabeçalho da tabela
     $header = [
       'uri' => ['data' => $this->t('URI')],
       'short_name' => ['data' => $this->t('Short Name')],
@@ -478,7 +500,7 @@ class STDSelectStudyForm extends FormBase {
       'actions' => ['data' => $this->t('Actions')],
     ];
 
-    // Build the table rows
+    // Constrói as linhas da tabela
     $rows = [];
     foreach ($this->getList() as $element) {
       $uri = $element->uri ?? '';
@@ -486,15 +508,7 @@ class STDSelectStudyForm extends FormBase {
       $label = $element->label ?? '';
       $title = $element->title ?? '';
 
-      // Selection checkbox
-      // $row['select'] = [
-      //   'data' => [
-      //     '#type' => 'checkbox',
-      //     '#name' => 'select[' . $uri . ']',
-      //   ],
-      // ];
-
-      // URI as a link
+      // URI como link
       $encodedUri = base64_encode($uri);
       $uri_link = Link::fromTextAndUrl($uri, Url::fromUserInput(REPGUI::DESCRIBE_PAGE . $encodedUri))->toString();
       $row['uri'] = ['data' => ['#markup' => $uri_link]];
@@ -505,14 +519,14 @@ class STDSelectStudyForm extends FormBase {
       // Name
       $row['name'] = $title;
 
-      // Actions
+      // Ações
       $actions = [];
 
-      // Build URLs for the links
+      // Constrói URLs para os links
       $previousUrl = base64_encode(\Drupal::request()->getRequestUri());
       $studyUriEncoded = base64_encode($element->uri);
 
-      // Manage Elements link
+      // Link para Gerenciar Elementos
       $manage_elements_str = base64_encode(Url::fromRoute('std.manage_study_elements', [
         'studyuri' => $studyUriEncoded,
       ])->toString());
@@ -523,7 +537,7 @@ class STDSelectStudyForm extends FormBase {
         'currentroute' => 'std.manage_study_elements',
       ]);
 
-      // View link
+      // Link para Visualizar
       $view_study_str = base64_encode(Url::fromRoute('rep.describe_element', [
         'elementuri' => $studyUriEncoded,
       ])->toString());
@@ -534,7 +548,7 @@ class STDSelectStudyForm extends FormBase {
         'currentroute' => 'rep.describe_element',
       ]);
 
-      // Edit link
+      // Link para Editar
       $edit_study_str = base64_encode(Url::fromRoute('std.edit_study', [
         'studyuri' => $studyUriEncoded,
       ])->toString());
@@ -545,17 +559,17 @@ class STDSelectStudyForm extends FormBase {
         'currentroute' => 'std.edit_study',
       ]);
 
-      // Delete link
+      // Link para Excluir
       $delete_study = Url::fromRoute('rep.delete_element', [
         'elementtype' => 'study',
         'elementuri' => $studyUriEncoded,
         'currenturl' => $previousUrl,
       ]);
 
-      // Actions
+      // Ações
       $actions = [];
 
-      // Manage Element link
+      // Link para Gerenciar Elemento
       $actions['manage_element'] = [
         '#type' => 'link',
         '#title' => Markup::create('<i class="fa-solid fa-folder-tree"></i> Manage Elements'),
@@ -565,7 +579,7 @@ class STDSelectStudyForm extends FormBase {
         ],
       ];
 
-      // View link
+      // Link para Visualizar
       $actions['view'] = [
         '#type' => 'link',
         '#title' => Markup::create('<i class="fa-solid fa-eye"></i> View'),
@@ -575,7 +589,7 @@ class STDSelectStudyForm extends FormBase {
         ],
       ];
 
-      // Edit link
+      // Link para Editar
       $actions['edit'] = [
         '#type' => 'link',
         '#title' => Markup::create('<i class="fa-solid fa-pen-to-square"></i> Edit'),
@@ -585,7 +599,7 @@ class STDSelectStudyForm extends FormBase {
         ],
       ];
 
-      // Delete link
+      // Link para Excluir
       $actions['delete'] = [
         '#type' => 'link',
         '#title' => Markup::create('<i class="fa-solid fa-trash-can"></i> Delete'),
@@ -607,7 +621,7 @@ class STDSelectStudyForm extends FormBase {
       $rows[] = $row;
     }
 
-    // Build the table
+    // Constrói a tabela
     $form['element_table'] = [
       '#type' => 'table',
       '#header' => $header,
@@ -617,45 +631,55 @@ class STDSelectStudyForm extends FormBase {
   }
 
   /**
-   * AJAX callback to load more cards.
+   * Load more function for Cards
    */
-  public function loadMoreCallback(array &$form, FormStateInterface $form_state) {
-    // Increment the page number
-    $page = $form_state->get('page') + 1;
-    $form_state->set('page', $page);
+  public function loadMoreCallback(array &$form = NULL, FormStateInterface $form_state = NULL) {
+    if ($form_state === NULL) {
+        $form_state = new \Drupal\Core\Form\FormState();
+    }
 
-    // Load the next set of items
+    // Is if loading has started to prevent double request
+    if ($form_state->get('loading')) {
+        return new JsonResponse(['cards' => []]);
+    }
+
+    $form_state->set('loading', true);
+
+    // Carregar a próxima página
+    $page = \Drupal::request()->query->get('page') ?? 1;
+    $this->element_type = \Drupal::request()->query->get('element_type');
+    $this->manager_email = \Drupal::currentUser()->getEmail();
+
     $pagesize = $form_state->get('page_size') ?? 9;
     $new_items = ListManagerEmailPage::exec($this->element_type, $this->manager_email, $page, $pagesize);
 
-    // Build the new cards
+    // Update status on already loaded items
+    $items_loaded = $form_state->get('items_loaded') ?? 0;
+    $items_loaded += count($new_items);
+    $form_state->set('items_loaded', $items_loaded);
+
+    // Build new cards
     $new_cards = [];
     $this->setList($new_items);
     $this->buildCardView($new_cards, $form_state);
 
-    // Render the new cards
+    // Render new cards
     $renderer = \Drupal::service('renderer');
     $rendered_cards = $renderer->renderRoot($new_cards);
 
-    $response = new AjaxResponse();
-    $response->addCommand(new AppendCommand('#cards-wrapper', $rendered_cards));
+    // Cancel loading status
+    $form_state->set('loading', false);
 
-    // Get total number of items
-    $total_items = $this->getListSize();
+    return new JsonResponse(['cards' => $rendered_cards, 'page' => $page]);
+}
 
-    // If there are no more items, hide the Load More button
-    if ($total_items <= $page * $pagesize) {
-      $response->addCommand(new CssCommand('.load-more-button', ['display' => 'none']));
-    }
-
-    return $response;
-  }
 
   /**
    * Submit handler for switching to table view.
    */
   public function viewTableSubmit(array &$form, FormStateInterface $form_state) {
     $form_state->set('view_type', 'table');
+    $form_state->set('page', 1); // Reseta o número da página
     $session = \Drupal::request()->getSession();
     $session->set('std_select_study_view_type', 'table');
     $form_state->setRebuild();
@@ -666,6 +690,7 @@ class STDSelectStudyForm extends FormBase {
    */
   public function viewCardSubmit(array &$form, FormStateInterface $form_state) {
     $form_state->set('view_type', 'card');
+    $form_state->set('page', 1); // Reseta o número da página
     $session = \Drupal::request()->getSession();
     $session->set('std_select_study_view_type', 'card');
     $form_state->setRebuild();
@@ -707,10 +732,23 @@ class STDSelectStudyForm extends FormBase {
   protected function performEdit($uri, FormStateInterface $form_state) {
     $uid = \Drupal::currentUser()->id();
     $previousUrl = \Drupal::request()->getRequestUri();
+    $items_loaded = $form_state->get('items_loaded') ?? 0;
+
+    // Adiciona parâmetro com o número de itens carregados
     Utils::trackingStoreUrls($uid, $previousUrl, 'std.edit_study');
     $url = Url::fromRoute('std.edit_study', [
       'studyuri' => base64_encode($uri),
+      'items_loaded' => $items_loaded,
     ]);
+
+    // Se a chamada for via AJAX, redireciona diretamente
+    if (\Drupal::request()->isXmlHttpRequest()) {
+      $url = $url->toString();
+      $response = new AjaxResponse();
+      $response->addCommand(new RedirectCommand($url));
+      return $response;
+    }
+
     $form_state->setRedirectUrl($url);
   }
 
