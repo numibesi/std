@@ -43,8 +43,6 @@ class EditStudyForm extends FormBase {
    */
   public function buildForm(array $form, FormStateInterface $form_state, $studyuri = NULL) {
 
-    dpm(Utils::trackingGetPreviousUrl(\Drupal::currentUser()->id(), 'std.edit_study'));
-
     $uri=$studyuri ?? 'default';
     $uri_decode=base64_decode($uri);
     $this->setStudyUri($uri_decode);
