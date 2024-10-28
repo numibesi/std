@@ -166,7 +166,7 @@ class EditStudyForm extends FormBase {
       if ($previousUrl && strpos($previousUrl, '/load-more-data') !== false) {
         // Extrair o número da página da query string da URL
         parse_str(parse_url($previousUrl, PHP_URL_QUERY), $params);
-        $page = isset($params['page']) ? $params['page'] : 1;
+        $page = 1;
         $element_type = isset($params['element_type']) ? $params['element_type'] : 'study';
         $pagesize = 9; // Utilize o valor padrão do tamanho da página
 
