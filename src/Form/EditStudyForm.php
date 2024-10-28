@@ -42,6 +42,9 @@ class EditStudyForm extends FormBase {
    * {@inheritdoc}
    */
   public function buildForm(array $form, FormStateInterface $form_state, $studyuri = NULL) {
+
+    dpm(Utils::trackingGetPreviousUrl(\Drupal::currentUser()->id(), 'std.edit_study'));
+
     $uri=$studyuri ?? 'default';
     $uri_decode=base64_decode($uri);
     $this->setStudyUri($uri_decode);
@@ -166,7 +169,7 @@ class EditStudyForm extends FormBase {
       if ($previousUrl && strpos($previousUrl, '/load-more-data') !== false) {
         // Extrair o número da página da query string da URL
         parse_str(parse_url($previousUrl, PHP_URL_QUERY), $params);
-        $page = 1;
+        $page = isset($params['page']) ? $params['page'] : 1;
         $element_type = isset($params['element_type']) ? $params['element_type'] : 'study';
         $pagesize = 9; // Utilize o valor padrão do tamanho da página
 

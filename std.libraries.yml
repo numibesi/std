@@ -7,6 +7,6 @@ std_js_css:
     js/std.js: {}
   dependencies:
     - core/jquery
-    - core/drupal
     - core/jquery.once
+    - core/drupal
     - core/drupalSettings
