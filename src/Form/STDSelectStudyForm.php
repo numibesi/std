@@ -11,6 +11,7 @@ use Drupal\rep\ListManagerEmailPage;
 use Drupal\rep\Utils;
 use Drupal\rep\Vocabulary\REPGUI;
 use Drupal\Core\Ajax\AjaxResponse;
+
 use Symfony\Component\HttpFoundation\JsonResponse;
 
 class STDSelectStudyForm extends FormBase {
@@ -51,18 +52,26 @@ class STDSelectStudyForm extends FormBase {
    */
   public function buildForm(array $form, FormStateInterface $form_state, $elementtype = NULL, $page = NULL, $pagesize = NULL) {
 
-    // GET MANAGER EMAIL
+    $form['#attached']['library'][] = 'std/std_js_css';
+
+    $form['#attached']['drupalSettings']['std_select_study_form']['ajaxUrl'] = Url::fromRoute('std.load_more_data')->toString();
+
+    $this->element_type = $elementtype ?? 'study'; // Valor padrão
+    $form['#attached']['drupalSettings']['std_select_study_form']['elementType'] = $this->element_type;
+
+
+    // OBTÉM O EMAIL DO GERENTE
     $this->manager_email = \Drupal::currentUser()->getEmail();
     $uid = \Drupal::currentUser()->id();
     $user = \Drupal\user\Entity\User::load($uid);
     $this->manager_name = $user->getDisplayName();
 
-    // GET ELEMENT TYPE
+    // OBTÉM O TIPO DE ELEMENTO
     $this->element_type = $elementtype;
 
-    // Default page size if not provided
+    // Tamanho de página padrão se não for fornecido
     if ($pagesize === NULL) {
-      $pagesize = 9; // Load 9 items at a time
+      $pagesize = 9; // Carrega 9 itens por vez
     }
 
     // Recupera o parâmetro 'items_loaded' da URL, se existir
@@ -74,10 +83,10 @@ class STDSelectStudyForm extends FormBase {
     $view_type = $session->get('std_select_study_view_type', 'card');
     $form_state->set('view_type', $view_type);
 
-    // Store page size in form state for use in AJAX callbacks
+    // Armazena o tamanho da página no estado do formulário para uso em callbacks AJAX
     $form_state->set('page_size', $pagesize);
 
-    // Determine the class names based on the element type
+    // Determina os nomes de classe com base no tipo de elemento
     $this->single_class_name = "";
     $this->plural_class_name = "";
     switch ($this->element_type) {
@@ -90,7 +99,7 @@ class STDSelectStudyForm extends FormBase {
         $this->plural_class_name = "Objects of Unknown Types";
     }
 
-    // PUT FORM TOGETHER
+    // MONTAR O FORMULÁRIO
     $form['page_title'] = [
       '#type' => 'item',
       '#markup' => '<h3 class="mt-5">Manage ' . $this->plural_class_name . '</h3>',
@@ -104,7 +113,7 @@ class STDSelectStudyForm extends FormBase {
       ]),
     ];
 
-    // Add view toggle buttons
+    // Adiciona botões de alternância de visualização
     $form['view_toggle'] = [
       '#type' => 'container',
       '#attributes' => ['class' => ['view-toggle', 'd-flex', 'justify-content-end']],
@@ -152,7 +161,7 @@ class STDSelectStudyForm extends FormBase {
         '#markup' => '<br>',
       ];
 
-      // Initialize current page if not set
+      // Inicializa a página atual
       if ($form_state->get('page') === NULL) {
         if ($page === NULL) {
           $page = 1; // Começa de 1
@@ -162,8 +171,11 @@ class STDSelectStudyForm extends FormBase {
         $page = $form_state->get('page');
       }
 
-      // Storage page number and form state
+      // Armazena o número da página no estado do formulário
       $form_state->set('page', $page);
+
+      // Adiciona a biblioteca JavaScript para infinite scroll (certifique-se de ter essa biblioteca no seu módulo)
+      // $form['#attached']['library'][] = 'std/infinite_scroll'; // Se você tiver uma biblioteca JS
 
       $items_loaded = $form_state->get('items_loaded') ?? 0;
       $total_pages_to_load = ceil($items_loaded / $pagesize);
@@ -178,46 +190,63 @@ class STDSelectStudyForm extends FormBase {
         }
       }
 
-      // Recover elements for current page
+      // Recupera os elementos para a página atual
       $this->setList(ListManagerEmailPage::exec($this->element_type, $this->manager_email, $page, $pagesize));
 
-      // Get total items value
+      // Obtém o número total de itens
       $this->setListSize(ListManagerEmailPage::total($this->element_type, $this->manager_email));
       $total_items = $this->getListSize();
 
-      // Envolve ajax cards on a container
+      // Envolve os cartões em um container para AJAX
       $form['cards_wrapper'] = [
         '#type' => 'container',
         '#attributes' => ['id' => 'cards-wrapper'],
       ];
 
-      // Build the card view into the 'cards_wrapper'
+      // Constrói a visualização em cartões dentro do 'cards_wrapper'
       $this->buildCardView($form['cards_wrapper'], $form_state);
 
-      // Check if there are more items to load
+      // Verifica se há mais itens para carregar
       if ($total_items > $page * $pagesize) {
+        // Adiciona um container Bootstrap para centralizar o botão
         $form['load_more_wrapper'] = [
           '#type' => 'container',
           '#attributes' => [
-            'class' => ['text-center', 'my-3'],
+            'class' => ['text-center', 'my-3'], // Centraliza o conteúdo e adiciona margem vertical
           ],
         ];
+
+        // // Adiciona o botão "Load More" dentro do container
+        // $form['load_more_wrapper']['load_more'] = [
+        //   '#type' => 'submit',
+        //   '#value' => $this->t('Load More'),
+        //   '#ajax' => [
+        //     'callback' => '::loadMoreCallback',
+        //     'wrapper' => 'cards-wrapper',
+        //     'method' => 'append',
+        //   ],
+        //   '#attributes' => [
+        //     'class' => ['btn', 'btn-primary', 'load-more-button'],
+        //     'style' => 'height: auto;', // Ajusta a altura ao conteúdo
+        //   ],
+        //   '#name' => 'load_more',
+        // ];
       }
 
     } else {
-      // Initialize page 1
+      // Inicializa a página atual
       if ($page === NULL) {
         $page = 1;
       }
 
-      // Store page number and form status
+      // Armazena o número da página no estado do formulário
       $form_state->set('page', $page);
 
-      // Build table view
+      // Constrói a visualização em tabela
       $this->setList(ListManagerEmailPage::exec($this->element_type, $this->manager_email, $page, $pagesize));
       $this->buildTableView($form, $form_state);
 
-      // Get total elements number and pages
+      // Obtém o número total de elementos e total de páginas
       $this->setListSize(ListManagerEmailPage::total($this->element_type, $this->manager_email));
       $total_items = $this->getListSize();
 
@@ -227,7 +256,7 @@ class STDSelectStudyForm extends FormBase {
         $total_pages = floor($total_items / $pagesize) + 1;
       }
 
-      // Next and Previous page links
+      // Cria link para a próxima página e página anterior
       if ($page < $total_pages) {
         $next_page = $page + 1;
         $next_page_link = ListManagerEmailPage::link($this->element_type, $next_page, $pagesize);
@@ -241,7 +270,7 @@ class STDSelectStudyForm extends FormBase {
         $previous_page_link = '';
       }
 
-      // Add pagination on bottom
+      // Adiciona paginação para a visualização em tabela
       $form['pager'] = [
         '#theme' => 'list-page',
         '#items' => [
@@ -274,15 +303,15 @@ class STDSelectStudyForm extends FormBase {
   }
 
   /**
-   * Constroi visualização de Cards
+   * Constrói a visualização em cartões com cabeçalho, conteúdo, rodapé e links de ação funcionais.
    */
   protected function buildCardView(array &$form, FormStateInterface $form_state) {
-    // Get items list
+    // Obtém a lista de itens para exibir
     $items = $this->getList();
 
     $cards = [];
 
-    // Process each entry to build cards
+    // Processa cada item para criar um cartão
     foreach ($items as $index => $element) {
         $uri = $element->uri ?? '';
         $label = $element->label ?? '';
@@ -291,7 +320,7 @@ class STDSelectStudyForm extends FormBase {
         $ins = $element->institution ?? '';
         $desc = $element->comment ?? '';
 
-        // Build Card Array
+        // Constrói o array do cartão
         $card = [
             '#type' => 'container',
             '#attributes' => ['class' => ['col-md-4'], 'id' => 'card-item-' . md5($uri)], // Adiciona um identificador único
@@ -302,7 +331,7 @@ class STDSelectStudyForm extends FormBase {
             '#attributes' => ['class' => ['card', 'mb-3']],
         ];
 
-        // Card Header
+        // Cabeçalho do cartão com 'short-Name'
         $shortName = $label;
         $card['card']['header'] = [
             '#type' => 'container',
@@ -313,18 +342,18 @@ class STDSelectStudyForm extends FormBase {
             '#markup' => '<h5>' . $shortName . '</h5>',
         ];
 
-        // determine is the element has an image or should be presented a placeholder
+        // Determina o URI da imagem ou usa um placeholder
         if (!empty($element->image)) {
             $image_uri = $element->image;
         } else {
-            // module placeholder
+            // Usa a imagem placeholder padrão do módulo
             $image_uri = base_path() . \Drupal::service('extension.list.module')->getPath('rep') . '/images/std_placeholder.png';
         }
 
-        // Created URI
+        // Cria um hyperlink para o URI se for válido
         $uri = Utils::namespaceUri($uri);
 
-        // Card Body
+        // Constrói o corpo do cartão com layout 60%-40%
         $card['card']['body'] = [
             '#type' => 'container',
             '#attributes' => [
@@ -370,14 +399,14 @@ class STDSelectStudyForm extends FormBase {
             ],
         ];
 
-        // Build action links
+        // Constrói os links de ação
         $previousUrl = base64_encode(\Drupal::request()->getRequestUri());
 
         if ($element->uri != NULL && $element->uri != "") {
-            // Change URI
+            // Codifica o URI do estudo
             $studyUriEncoded = base64_encode($element->uri);
 
-            // Management link
+            // Link para Gerenciar Elementos
             $manage_elements_str = base64_encode(Url::fromRoute('std.manage_study_elements', [
                 'studyuri' => $studyUriEncoded,
             ])->toString());
@@ -388,7 +417,7 @@ class STDSelectStudyForm extends FormBase {
                 'currentroute' => 'std.manage_study_elements',
             ]);
 
-            // View Link
+            // Link para Visualizar
             $view_study_str = base64_encode(Url::fromRoute('rep.describe_element', [
                 'elementuri' => $studyUriEncoded,
             ])->toString());
@@ -399,7 +428,7 @@ class STDSelectStudyForm extends FormBase {
                 'currentroute' => 'rep.describe_element',
             ]);
 
-            // Edit link
+            // Link para Editar
             $edit_study_str = base64_encode(Url::fromRoute('std.edit_study', [
                 'studyuri' => $studyUriEncoded,
             ])->toString());
@@ -410,7 +439,7 @@ class STDSelectStudyForm extends FormBase {
                 'currentroute' => 'std.edit_study',
             ]);
 
-            // Delete link
+            // Link para Excluir
             $delete_study = Url::fromRoute('rep.delete_element', [
                 'elementtype' => 'study',
                 'elementuri' => $studyUriEncoded,
@@ -418,7 +447,7 @@ class STDSelectStudyForm extends FormBase {
             ]);
         }
 
-        // Card footer
+        // Rodapé do cartão com links de ação
         $card['card']['footer'] = [
             '#type' => 'container',
             '#attributes' => [
@@ -465,9 +494,9 @@ class STDSelectStudyForm extends FormBase {
         $cards[] = $card;
     }
 
-    // Form cards
+    // Agora constrói os cartões no formulário
     $index = 0;
-    // 3 on each row
+    // Constrói os cartões em linhas de 3
     foreach (array_chunk($cards, 3) as $row) {
         $index++;
         if (!isset($form['row_' . $index])) {
@@ -489,7 +518,7 @@ class STDSelectStudyForm extends FormBase {
 
 
   /**
-   * Build Table View
+   * Constrói a visualização em tabela com as colunas e botões de ação especificados.
    */
   protected function buildTableView(array &$form, FormStateInterface $form_state) {
     // Define o cabeçalho da tabela
@@ -630,17 +659,14 @@ class STDSelectStudyForm extends FormBase {
     ];
   }
 
-  /**
-   * Load more function for Cards
-   */
   public function loadMoreCallback(array &$form = NULL, FormStateInterface $form_state = NULL) {
     if ($form_state === NULL) {
-        $form_state = new \Drupal\Core\Form\FormState();
+        $form_state = new \Drupal\Core\Form\FormState(); // Cria um novo FormState se não existir
     }
 
-    // Is if loading has started to prevent double request
+    // Verifica se o carregamento já está em andamento
     if ($form_state->get('loading')) {
-        return new JsonResponse(['cards' => []]);
+        return new JsonResponse(['cards' => []]); // Impede processamento duplicado
     }
 
     $form_state->set('loading', true);
@@ -653,21 +679,21 @@ class STDSelectStudyForm extends FormBase {
     $pagesize = $form_state->get('page_size') ?? 9;
     $new_items = ListManagerEmailPage::exec($this->element_type, $this->manager_email, $page, $pagesize);
 
-    // Update status on already loaded items
+    // Atualiza o estado com o número de itens carregados até agora
     $items_loaded = $form_state->get('items_loaded') ?? 0;
     $items_loaded += count($new_items);
     $form_state->set('items_loaded', $items_loaded);
 
-    // Build new cards
+    // Construir os novos cartões
     $new_cards = [];
     $this->setList($new_items);
     $this->buildCardView($new_cards, $form_state);
 
-    // Render new cards
+    // Renderiza os novos cartões
     $renderer = \Drupal::service('renderer');
     $rendered_cards = $renderer->renderRoot($new_cards);
 
-    // Cancel loading status
+    // Libera o estado de carregamento após renderizar
     $form_state->set('loading', false);
 
     return new JsonResponse(['cards' => $rendered_cards, 'page' => $page]);
@@ -675,7 +701,7 @@ class STDSelectStudyForm extends FormBase {
 
 
   /**
-   * Submit handler for switching to table view.
+   * Manipulador de envio para alternar para a visualização em tabela.
    */
   public function viewTableSubmit(array &$form, FormStateInterface $form_state) {
     $form_state->set('view_type', 'table');
@@ -686,7 +712,7 @@ class STDSelectStudyForm extends FormBase {
   }
 
   /**
-   * Submit handler for switching to card view.
+   * Manipulador de envio para alternar para a visualização em cartões.
    */
   public function viewCardSubmit(array &$form, FormStateInterface $form_state) {
     $form_state->set('view_type', 'card');
@@ -701,15 +727,15 @@ class STDSelectStudyForm extends FormBase {
    */
   public function submitForm(array &$form, FormStateInterface $form_state) {
 
-    // RETRIEVE TRIGGERING BUTTON
+    // RECUPERA O BOTÃO QUE DISPAROU O ENVIO
     $triggering_element = $form_state->getTriggeringElement();
     $button_name = $triggering_element['#name'];
 
-    // SET USER ID AND PREVIOUS URL FOR TRACKING STORE URLS
+    // DEFINE O ID DO USUÁRIO E A URL ANTERIOR PARA RASTREAMENTO
     $uid = \Drupal::currentUser()->id();
     $previousUrl = \Drupal::request()->getRequestUri();
 
-    // Handle actions based on button name
+    // Lida com ações com base no nome do botão
     if ($button_name === 'add_element') {
       Utils::trackingStoreUrls($uid, $previousUrl, 'std.add_study');
       $url = Url::fromRoute('std.add_study');
@@ -718,16 +744,16 @@ class STDSelectStudyForm extends FormBase {
       $url = Url::fromRoute('std.search');
       $form_state->setRedirectUrl($url);
     } elseif ($button_name === 'edit_element') {
-      // Handle editing selected elements in table view
+      // Lida com a edição de elementos selecionados na visualização em tabela
       $this->handleEditSelected($form_state);
     } elseif ($button_name === 'delete_element') {
-      // Handle deleting selected elements in table view
+      // Lida com a exclusão de elementos selecionados na visualização em tabela
       $this->handleDeleteSelected($form_state);
     }
   }
 
   /**
-   * Perform the edit action.
+   * Executa a ação de edição.
    */
   protected function performEdit($uri, FormStateInterface $form_state) {
     $uid = \Drupal::currentUser()->id();
@@ -753,7 +779,7 @@ class STDSelectStudyForm extends FormBase {
   }
 
   /**
-   * Perform the delete action.
+   * Executa a ação de exclusão.
    */
   protected function performDelete(array $uris, FormStateInterface $form_state) {
     $api = \Drupal::service('rep.api_connector');
@@ -761,7 +787,7 @@ class STDSelectStudyForm extends FormBase {
       $study = $api->parseObjectResponse($api->getUri($uri), 'getUri');
       if ($study != NULL && $study->hasDataFile != NULL) {
 
-        // DELETE FILE
+        // EXCLUI O ARQUIVO
         if (isset($study->hasDataFile->id)) {
           $file = \Drupal\file\Entity\File::load($study->hasDataFile->id);
           if ($file) {
@@ -770,7 +796,7 @@ class STDSelectStudyForm extends FormBase {
           }
         }
 
-        // DELETE DATAFILE
+        // EXCLUI O DATAFILE
         if (isset($study->hasDataFile->uri)) {
           $api->dataFileDel($study->hasDataFile->uri);
           \Drupal::messenger()->addMessage($this->t('DataFile with URI @uri deleted.', ['@uri' => $study->hasDataFile->uri]));
@@ -782,7 +808,7 @@ class STDSelectStudyForm extends FormBase {
   }
 
   /**
-   * Handle editing selected elements in table view.
+   * Lida com a edição de elementos selecionados na visualização em tabela.
    */
   protected function handleEditSelected(FormStateInterface $form_state) {
     $selected_rows = $form_state->getUserInput()['select'] ?? [];
@@ -798,7 +824,7 @@ class STDSelectStudyForm extends FormBase {
   }
 
   /**
-   * Handle deleting selected elements in table view.
+   * Lida com a exclusão de elementos selecionados na visualização em tabela.
    */
   protected function handleDeleteSelected(FormStateInterface $form_state) {
     $selected_rows = $form_state->getUserInput()['select'] ?? [];
