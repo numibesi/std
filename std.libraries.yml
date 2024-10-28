@@ -8,5 +8,8 @@ std_js_css:
   dependencies:
     - core/jquery
     - core/jquery.once
+<<<<<<< HEAD
     - core/drupal
+=======
+>>>>>>> 84885c53228f31874adaf519e84a25b937e1f114
     - core/drupalSettings
