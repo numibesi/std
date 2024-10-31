@@ -47,7 +47,7 @@
       }
 
       function onScroll() {
-        const scrollThreshold = 200;
+        const scrollThreshold = 20;
 
         if ($(window).scrollTop() + $(window).height() >= $(document).height() - scrollThreshold) {
           loadMoreItems();
